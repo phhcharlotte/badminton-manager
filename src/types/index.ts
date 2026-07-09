@@ -1,20 +1,18 @@
 // src/types/index.ts
 
-export type UserRole = 'admin' | 'staff' | 'user';
+export type UserRole = "admin" | "manager" | "customer";
 
 export interface User {
-  id: string;
-  username: string;
-  password: string;
+  _id: string;
   fullName: string;
   email: string;
-  phone: string;
   role: UserRole;
-  createdAt: string;
+  phone?: string;
   isActive: boolean;
+  createdAt: string;
 }
 
-export type CourtType = 'fixed' | 'casual';
+export type CourtType = "fixed" | "casual";
 
 export interface Court {
   id: string;
@@ -27,12 +25,12 @@ export interface Court {
   createdAt: string;
 }
 
-export type BookingStatus = 'pending' | 'confirmed' | 'cancelled' | 'completed';
+export type BookingStatus = "pending" | "confirmed" | "cancelled" | "completed";
 
 export interface TimeSlot {
   id: string;
   startTime: string; // "07:00"
-  endTime: string;   // "08:00"
+  endTime: string; // "08:00"
   isBooked: boolean;
   bookingId?: string;
 }
@@ -58,13 +56,16 @@ export interface Booking {
 export interface AuthState {
   currentUser: User | null;
   isAuthenticated: boolean;
-  login: (username: string, password: string) => { success: boolean; message: string };
+  login: (
+    username: string,
+    password: string,
+  ) => { success: boolean; message: string };
   logout: () => void;
 }
 
 export interface CourtStore {
   courts: Court[];
-  addCourt: (court: Omit<Court, 'id' | 'createdAt'>) => void;
+  addCourt: (court: Omit<Court, "id" | "createdAt">) => void;
   updateCourt: (id: string, updates: Partial<Court>) => void;
   deleteCourt: (id: string) => void;
   updatePrice: (id: string, price: number) => void;
@@ -72,7 +73,7 @@ export interface CourtStore {
 
 export interface BookingStore {
   bookings: Booking[];
-  addBooking: (booking: Omit<Booking, 'id' | 'createdAt'>) => void;
+  addBooking: (booking: Omit<Booking, "id" | "createdAt">) => void;
   updateBookingStatus: (id: string, status: BookingStatus) => void;
   getBookingsByUser: (userId: string) => Booking[];
   getBookingsByCourt: (courtId: string, date: string) => Booking[];
@@ -81,13 +82,28 @@ export interface BookingStore {
 
 export interface UserStore {
   users: User[];
-  addUser: (user: Omit<User, 'id' | 'createdAt'>) => void;
+  addUser: (user: Omit<User, "id" | "createdAt">) => void;
   updateUser: (id: string, updates: Partial<User>) => void;
   toggleUserStatus: (id: string) => void;
 }
 
 export const TIME_SLOTS: string[] = [
-  '05:00', '06:00', '07:00', '08:00', '09:00', '10:00',
-  '11:00', '12:00', '13:00', '14:00', '15:00', '16:00',
-  '17:00', '18:00', '19:00', '20:00', '21:00', '22:00'
+  "05:00",
+  "06:00",
+  "07:00",
+  "08:00",
+  "09:00",
+  "10:00",
+  "11:00",
+  "12:00",
+  "13:00",
+  "14:00",
+  "15:00",
+  "16:00",
+  "17:00",
+  "18:00",
+  "19:00",
+  "20:00",
+  "21:00",
+  "22:00",
 ];

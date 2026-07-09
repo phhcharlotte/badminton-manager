@@ -1,80 +1,131 @@
 // src/store/authStore.ts
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import { User } from '../types';
-import { INITIAL_USERS } from '../data/mockData';
+import { create } from "zustand";
+import { User } from "../types";
+import { setAccessToken } from "@/apis/tokenStore";
+import {
+  loginApi,
+  logoutApi,
+  refreshApi,
+  registerApi,
+  createManagerApi,
+  listUsersApi,
+  setUserStatusApi,
+  deleteUserApi,
+} from "@/apis/auth.api";
 
 interface AuthStore {
   currentUser: User | null;
   isAuthenticated: boolean;
-  users: User[];
-  login: (username: string, password: string) => { success: boolean; message: string };
-  logout: () => void;
-  addUser: (user: Omit<User, 'id' | 'createdAt'>) => { success: boolean; message: string };
-  updateUser: (id: string, updates: Partial<User>) => void;
-  toggleUserStatus: (id: string) => void;
-  deleteUser: (id: string) => void;
-  getAllUsers: () => User[];
+  isLoading: boolean; // dang khoi phuc phien luc F5
+  users: User[]; // danh sach lay tu server (chi admin dung)
+
+  initAuth: () => Promise<void>; // goi 1 lan khi app khoi dong
+  login: (
+    email: string,
+    password: string,
+  ) => Promise<{ success: boolean; message: string }>;
+  registerCustomer: (payload: {
+    fullName: string;
+    email: string;
+    password: string;
+    phone?: string;
+  }) => Promise<{ success: boolean; message: string }>;
+  logout: () => Promise<void>;
+
+  fetchUsers: (role?: string) => Promise<void>;
+  addManager: (payload: {
+    fullName: string;
+    email: string;
+    password: string;
+    phone?: string;
+  }) => Promise<{ success: boolean; message: string }>;
+  toggleUserStatus: (id: string, isActive: boolean) => Promise<void>;
+  deleteUser: (id: string) => Promise<void>;
 }
 
-export const useAuthStore = create<AuthStore>()(
-  persist(
-    (set, get) => ({
-      currentUser: null,
-      isAuthenticated: false,
-      users: INITIAL_USERS,
+export const useAuthStore = create<AuthStore>((set, get) => ({
+  currentUser: null,
+  isAuthenticated: false,
+  isLoading: true,
+  users: [],
 
-      login: (username, password) => {
-        const { users } = get();
-        const user = users.find(
-          (u) => u.username === username && u.password === password && u.isActive
-        );
-        if (user) {
-          set({ currentUser: user, isAuthenticated: true });
-          return { success: true, message: 'Đăng nhập thành công!' };
-        }
-        return { success: false, message: 'Tên đăng nhập hoặc mật khẩu không đúng!' };
-      },
+  initAuth: async () => {
+    try {
+      const { user, accessToken } = await refreshApi();
+      setAccessToken(accessToken);
+      set({ currentUser: user, isAuthenticated: true });
+    } catch {
+      setAccessToken(null);
+      set({ currentUser: null, isAuthenticated: false });
+    } finally {
+      set({ isLoading: false });
+    }
+  },
 
-      logout: () => set({ currentUser: null, isAuthenticated: false }),
+  login: async (email, password) => {
+    try {
+      const { user, accessToken } = await loginApi(email, password);
+      setAccessToken(accessToken);
+      set({ currentUser: user, isAuthenticated: true });
+      return { success: true, message: "Đăng nhập thành công!" };
+    } catch (err: any) {
+      return {
+        success: false,
+        message:
+          err?.response?.data?.message ||
+          "Tên đăng nhập hoặc mật khẩu không đúng!",
+      };
+    }
+  },
 
-      addUser: (userData) => {
-        const { users } = get();
-        const exists = users.find((u) => u.username === userData.username);
-        if (exists) {
-          return { success: false, message: 'Tên đăng nhập đã tồn tại!' };
-        }
-        const newUser: User = {
-          ...userData,
-          id: `u${Date.now()}`,
-          createdAt: new Date().toISOString().split('T')[0],
-        };
-        set({ users: [...users, newUser] });
-        return { success: true, message: 'Tạo tài khoản thành công!' };
-      },
+  registerCustomer: async (payload) => {
+    try {
+      const { user, accessToken } = await registerApi(payload);
+      setAccessToken(accessToken);
+      set({ currentUser: user, isAuthenticated: true });
+      return { success: true, message: "Đăng ký thành công!" };
+    } catch (err: any) {
+      return {
+        success: false,
+        message: err?.response?.data?.message || "Đăng ký thất bại!",
+      };
+    }
+  },
 
-      updateUser: (id, updates) => {
-        set((state) => ({
-          users: state.users.map((u) => (u.id === id ? { ...u, ...updates } : u)),
-        }));
-      },
+  logout: async () => {
+    try {
+      await logoutApi();
+    } finally {
+      setAccessToken(null);
+      set({ currentUser: null, isAuthenticated: false });
+    }
+  },
 
-      toggleUserStatus: (id) => {
-        set((state) => ({
-          users: state.users.map((u) =>
-            u.id === id ? { ...u, isActive: !u.isActive } : u
-          ),
-        }));
-      },
+  fetchUsers: async (role) => {
+    const users = await listUsersApi(role);
+    set({ users });
+  },
 
-      deleteUser: (id) => {
-        set((state) => ({
-          users: state.users.filter((u) => u.id !== id),
-        }));
-      },
+  addManager: async (payload) => {
+    try {
+      const manager = await createManagerApi(payload);
+      set({ users: [manager, ...get().users] });
+      return { success: true, message: "Tạo tài khoản quản lý thành công!" };
+    } catch (err: any) {
+      return {
+        success: false,
+        message: err?.response?.data?.message || "Tên đăng nhập đã tồn tại!",
+      };
+    }
+  },
 
-      getAllUsers: () => get().users,
-    }),
-    { name: 'auth-store' }
-  )
-);
+  toggleUserStatus: async (id, isActive) => {
+    const updated = await setUserStatusApi(id, !isActive);
+    set({ users: get().users.map((u) => (u._id === id ? updated : u)) });
+  },
+
+  deleteUser: async (id) => {
+    await deleteUserApi(id);
+    set({ users: get().users.filter((u) => u._id !== id) });
+  },
+}));

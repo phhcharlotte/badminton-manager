@@ -5,7 +5,7 @@ import CssBaseline from "@mui/material/CssBaseline";
 import { useAuthStore } from "./store/authStore";
 import { UserRole } from "./types";
 
-import LoginPage from "./pages/LoginPage";
+import LoginPage from "./pages/Login/LoginPage";
 import Sidebar from "./components/shared/Sidebar";
 import MobileNavbar from "./components/shared/MobileNavbar";
 import ProtectedRoute from "./components/auth/ProtectedRoute";

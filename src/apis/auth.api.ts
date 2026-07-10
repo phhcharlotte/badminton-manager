@@ -36,8 +36,14 @@ export const createManagerApi = async (payload: {
   return data.data.user as User;
 };
 
-export const listUsersApi = async (role?: string) => {
-  const { data } = await apiClient.get("/admin/users", { params: { role } });
+export const listUsersApi = async (params?: {
+  role?: string;
+  page?: number;
+  limit?: number;
+}) => {
+  const { data } = await apiClient.get("/admin/users", {
+    params: { limit: 100, ...params }, // lay toi da 100 user 1 lan, du dung cho hau het truong hop
+  });
   return data.data.users as User[];
 };
 
@@ -50,4 +56,12 @@ export const setUserStatusApi = async (id: string, isActive: boolean) => {
 
 export const deleteUserApi = async (id: string) => {
   await apiClient.delete(`/admin/users/${id}`);
+};
+
+export const updateProfileApi = async (payload: {
+  fullName?: string;
+  phone?: string;
+}) => {
+  const { data } = await apiClient.patch("/auth/me", payload);
+  return data.data.user as User;
 };

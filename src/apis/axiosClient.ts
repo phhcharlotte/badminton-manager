@@ -3,7 +3,7 @@ import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
 import { getAccessToken, setAccessToken } from "./tokenStore";
 
 // Lay tu file .env.development / .env.production, KHONG hard-code URL
-export const BASE_URL = import.meta.env.REACT_APP_API_URL as string;
+export const BASE_URL = import.meta.env.VITE_API_URL as string;
 
 export const apiClient = axios.create({
   baseURL: BASE_URL,

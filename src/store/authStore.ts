@@ -10,6 +10,8 @@ import {
   createManagerApi,
   listUsersApi,
   setUserStatusApi,
+  updateProfileApi,
+  changePasswordApi,
   deleteUserApi,
 } from "@/apis/auth.api";
 
@@ -40,6 +42,14 @@ interface AuthStore {
     phone?: string;
   }) => Promise<{ success: boolean; message: string }>;
   toggleUserStatus: (id: string, isActive: boolean) => Promise<void>;
+  updateProfile: (payload: {
+    fullName?: string;
+    phone?: string;
+  }) => Promise<{ success: boolean; message: string }>;
+  changePassword: (
+    currentPassword: string,
+    newPassword: string,
+  ) => Promise<{ success: boolean; message: string }>;
   deleteUser: (id: string) => Promise<void>;
 }
 
@@ -102,7 +112,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   },
 
   fetchUsers: async (role) => {
-    const users = await listUsersApi(role);
+    const users = await listUsersApi(role ? { role } : undefined);
     set({ users });
   },
 
@@ -114,14 +124,45 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     } catch (err: any) {
       return {
         success: false,
-        message: err?.response?.data?.message || "Tên đăng nhập đã tồn tại!",
+        message: err?.response?.data?.message || "Tạo tài khoản thất bại!",
       };
     }
   },
 
-  toggleUserStatus: async (id, isActive) => {
-    const updated = await setUserStatusApi(id, !isActive);
+  toggleUserStatus: async (id, currentStatus) => {
+    const updated = await setUserStatusApi(id, !currentStatus);
     set({ users: get().users.map((u) => (u._id === id ? updated : u)) });
+  },
+
+  updateProfile: async (payload) => {
+    try {
+      const updated = await updateProfileApi(payload);
+      set({ currentUser: updated });
+      return { success: true, message: "Cập nhật hồ sơ thành công!" };
+    } catch (err: any) {
+      return {
+        success: false,
+        message: err?.response?.data?.message || "Cập nhật thất bại!",
+      };
+    }
+  },
+
+  changePassword: async (currentPassword, newPassword) => {
+    try {
+      await changePasswordApi(currentPassword, newPassword);
+      // BE thu hoi toan bo token sau khi doi mat khau -> bat dang xuat luon o FE
+      setAccessToken(null);
+      set({ currentUser: null, isAuthenticated: false });
+      return {
+        success: true,
+        message: "Đổi mật khẩu thành công! Vui lòng đăng nhập lại.",
+      };
+    } catch (err: any) {
+      return {
+        success: false,
+        message: err?.response?.data?.message || "Đổi mật khẩu thất bại!",
+      };
+    }
   },
 
   deleteUser: async (id) => {

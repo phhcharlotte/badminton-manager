@@ -6,6 +6,8 @@ import {
   listAllBookingsApi,
   updateBookingStatusApi,
   CreateBookingPayload,
+  createFixedBookingApi,
+  CreateFixedBookingPayload,
 } from "@/apis/booking.api";
 import { Booking, BookingStatus } from "@/types/Booking";
 
@@ -36,6 +38,9 @@ interface BookingStore {
 
   getBookingsByUser: (userId: string) => Booking[];
   getAllBookings: () => Booking[];
+  createFixedBooking: (
+    payload: CreateFixedBookingPayload,
+  ) => Promise<{ success: boolean; message: string; conflict?: boolean }>;
 }
 
 export const useBookingStore = create<BookingStore>((set, get) => ({
@@ -126,4 +131,22 @@ export const useBookingStore = create<BookingStore>((set, get) => ({
   getBookingsByUser: (userId) =>
     get().myBookings.filter((b) => b.user === userId),
   getAllBookings: () => get().allBookings,
+  createFixedBooking: async (payload) => {
+    try {
+      const booking = await createFixedBookingApi(payload);
+      set({ myBookings: [booking, ...get().myBookings] });
+      return {
+        success: true,
+        message:
+          "Đăng ký sân cố định thành công! Nhân viên sẽ xác nhận trong 30 phút.",
+      };
+    } catch (err: any) {
+      const errorCode = err?.response?.data?.errorCode;
+      return {
+        success: false,
+        message: err?.response?.data?.message || "Đăng ký thất bại!",
+        conflict: errorCode === "SLOT_ALREADY_BOOKED",
+      };
+    }
+  },
 }));

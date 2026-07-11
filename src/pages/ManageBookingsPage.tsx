@@ -17,20 +17,32 @@ import {
   Alert,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
+import AssessmentIcon from "@mui/icons-material/Assessment";
+import EventNoteIcon from "@mui/icons-material/EventNote";
+import HourglassEmptyIcon from "@mui/icons-material/HourglassEmpty";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import CancelIcon from "@mui/icons-material/Cancel";
+import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
+import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
+import InboxIcon from "@mui/icons-material/Inbox";
+import StarIcon from "@mui/icons-material/Star";
+import BoltIcon from "@mui/icons-material/Bolt";
 import { useBookingStore } from "@/store/bookingStore";
 import { BookingStatus } from "@/types/Booking/index";
 import { formatCurrency, formatDate } from "@/utils/helpers";
 import NotificationSnackbar from "@/components/shared/NotificationSnackbar";
 import { useNotification } from "@/hooks/useNotification";
 
-const STATUS_CONFIG: Record<
+type StatusConfigMap = Record<
   BookingStatus,
-  { label: string; icon: string; cls: string }
-> = {
-  pending: { label: "Chờ xác nhận", icon: "⏳", cls: "pending" },
-  confirmed: { label: "Đã xác nhận", icon: "✅", cls: "confirmed" },
-  cancelled: { label: "Đã huỷ", icon: "❌", cls: "cancelled" },
-  completed: { label: "Hoàn thành", icon: "🏅", cls: "completed" },
+  { label: string; icon: React.ElementType; cls: string }
+>;
+
+const STATUS_CONFIG: StatusConfigMap = {
+  pending: { label: "Chờ xác nhận", icon: HourglassEmptyIcon, cls: "pending" },
+  confirmed: { label: "Đã xác nhận", icon: CheckCircleIcon, cls: "confirmed" },
+  cancelled: { label: "Đã huỷ", icon: CancelIcon, cls: "cancelled" },
+  completed: { label: "Hoàn thành", icon: EmojiEventsIcon, cls: "completed" },
 };
 
 const ManageBookingsPage: React.FC = () => {
@@ -46,8 +58,6 @@ const ManageBookingsPage: React.FC = () => {
   const [cancelDialog, setCancelDialog] = useState<{ id: string } | null>(null);
   const [cancelReason, setCancelReason] = useState("");
 
-  // Tai du lieu ban dau. Sau do bookingStore se tu cap nhat real-time qua socket
-  // (booking:new / booking:updated) khong can goi lai API nay nua.
   useEffect(() => {
     fetchAllBookings().catch(() =>
       notify("Không tải được danh sách đặt sân!", "error"),
@@ -81,7 +91,7 @@ const ManageBookingsPage: React.FC = () => {
     const result = await updateBookingStatus(id, "completed");
     setProcessingId(null);
     notify(
-      result.success ? "🏅 Đã đánh dấu hoàn thành!" : result.message,
+      result.success ? "Đã đánh dấu hoàn thành!" : result.message,
       result.success ? "success" : "error",
     );
   };
@@ -102,7 +112,7 @@ const ManageBookingsPage: React.FC = () => {
     setProcessingId(null);
     setCancelDialog(null);
     notify(
-      result.success ? "❌ Đã huỷ lịch đặt sân." : result.message,
+      result.success ? "Đã huỷ lịch đặt sân." : result.message,
       result.success ? "warning" : "error",
     );
   };
@@ -114,7 +124,10 @@ const ManageBookingsPage: React.FC = () => {
   return (
     <div className="fade-in-up">
       <div className="page-header">
-        <div className="page-title">📊 Quản lý đặt sân</div>
+        <div className="page-title">
+          <AssessmentIcon sx={{ verticalAlign: "middle", mr: 1 }} />
+          Quản lý đặt sân
+        </div>
         <div className="page-subtitle">
           Xem và cập nhật trạng thái tất cả các lịch đặt sân
         </div>
@@ -125,35 +138,39 @@ const ManageBookingsPage: React.FC = () => {
           {
             label: "Tổng cộng",
             value: allBookings.length,
-            icon: "📅",
+            Icon: EventNoteIcon,
             bg: "#e8f5e9",
             ibg: "#c8e6c9",
+            color: "#1a472a",
           },
           {
             label: "Chờ xác nhận",
             value: allBookings.filter((b) => b.status === "pending").length,
-            icon: "⏳",
+            Icon: HourglassEmptyIcon,
             bg: "#fef3c7",
             ibg: "#fde68a",
+            color: "#b45309",
           },
           {
             label: "Đã xác nhận",
             value: allBookings.filter((b) => b.status === "confirmed").length,
-            icon: "✅",
+            Icon: CheckCircleIcon,
             bg: "#d1fae5",
             ibg: "#a7f3d0",
+            color: "#065f46",
           },
           {
             label: "Doanh thu",
             value: formatCurrency(totalRevenue),
-            icon: "💰",
+            Icon: AttachMoneyIcon,
             bg: "#dbeafe",
             ibg: "#bfdbfe",
+            color: "#1e40af",
           },
         ].map((s) => (
           <div className="stat-card" key={s.label} style={{ background: s.bg }}>
             <div className="stat-icon" style={{ background: s.ibg }}>
-              {s.icon}
+              <s.Icon sx={{ color: s.color }} />
             </div>
             <div className="stat-content">
               <div
@@ -196,7 +213,11 @@ const ManageBookingsPage: React.FC = () => {
             <MenuItem value="all">Tất cả</MenuItem>
             {Object.entries(STATUS_CONFIG).map(([key, val]) => (
               <MenuItem key={key} value={key}>
-                {val.icon} {val.label}
+                <val.icon
+                  fontSize="small"
+                  sx={{ verticalAlign: "middle", mr: 1 }}
+                />
+                {val.label}
               </MenuItem>
             ))}
           </Select>
@@ -225,7 +246,7 @@ const ManageBookingsPage: React.FC = () => {
                 padding: "60px 20px",
                 color: "#718096",
               }}>
-              <div style={{ fontSize: 48, marginBottom: 16 }}>📭</div>
+              <InboxIcon sx={{ fontSize: 48, mb: 2, color: "#cbd5e1" }} />
               <div style={{ fontWeight: 700, fontSize: 18 }}>
                 Không có dữ liệu
               </div>
@@ -267,10 +288,15 @@ const ManageBookingsPage: React.FC = () => {
                         <td>
                           <div style={{ fontWeight: 700 }}>{b.courtName}</div>
                           <Chip
+                            icon={
+                              b.courtType === "fixed" ? (
+                                <StarIcon fontSize="small" />
+                              ) : (
+                                <BoltIcon fontSize="small" />
+                              )
+                            }
                             label={
-                              b.courtType === "fixed"
-                                ? "⭐ Cố định"
-                                : "🎯 Vãng lai"
+                              b.courtType === "fixed" ? "Cố định" : "Vãng lai"
                             }
                             size="small"
                             color={b.courtType === "fixed" ? "warning" : "info"}
@@ -296,7 +322,11 @@ const ManageBookingsPage: React.FC = () => {
                         </td>
                         <td>
                           <span className={`status-badge ${s.cls}`}>
-                            {s.icon} {s.label}
+                            <s.icon
+                              fontSize="small"
+                              sx={{ verticalAlign: "middle", mr: 0.5 }}
+                            />
+                            {s.label}
                           </span>
                         </td>
                         <td>
@@ -317,17 +347,23 @@ const ManageBookingsPage: React.FC = () => {
                                       size="small"
                                       variant="contained"
                                       color="success"
+                                      startIcon={
+                                        <CheckCircleIcon fontSize="small" />
+                                      }
                                       onClick={() => handleConfirm(b._id)}
                                       sx={{ fontSize: 11 }}>
-                                      ✅ Xác nhận
+                                      Xác nhận
                                     </Button>
                                     <Button
                                       size="small"
                                       variant="outlined"
                                       color="error"
+                                      startIcon={
+                                        <CancelIcon fontSize="small" />
+                                      }
                                       onClick={() => openCancelDialog(b._id)}
                                       sx={{ fontSize: 11 }}>
-                                      ❌ Huỷ
+                                      Huỷ
                                     </Button>
                                   </>
                                 )}
@@ -335,12 +371,15 @@ const ManageBookingsPage: React.FC = () => {
                                   <Button
                                     size="small"
                                     variant="contained"
+                                    startIcon={
+                                      <EmojiEventsIcon fontSize="small" />
+                                    }
                                     onClick={() => handleComplete(b._id)}
                                     sx={{
                                       fontSize: 11,
                                       background: "#1a472a",
                                     }}>
-                                    🏅 Hoàn thành
+                                    Hoàn thành
                                   </Button>
                                 )}
                                 {(b.status === "completed" ||
@@ -364,14 +403,20 @@ const ManageBookingsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Dialog nhap ly do khi tu choi don */}
       <Dialog
         open={!!cancelDialog}
         onClose={() => setCancelDialog(null)}
         maxWidth="xs"
         fullWidth>
-        <DialogTitle sx={{ fontWeight: 800, color: "#dc2626" }}>
-          ❌ Huỷ lịch đặt sân
+        <DialogTitle
+          sx={{
+            fontWeight: 800,
+            color: "#dc2626",
+            display: "flex",
+            alignItems: "center",
+            gap: 1,
+          }}>
+          <CancelIcon /> Huỷ lịch đặt sân
         </DialogTitle>
         <DialogContent>
           <Alert severity="warning" sx={{ mb: 2 }}>

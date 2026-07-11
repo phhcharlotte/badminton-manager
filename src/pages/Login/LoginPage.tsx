@@ -16,6 +16,7 @@ import {
   InsertChartOutlined,
   CheckBoxOutlined,
   ArrowBackOutlined,
+  SportsTennisOutlined,
 } from "@mui/icons-material";
 import { useAuthStore } from "@/store/authStore";
 
@@ -112,7 +113,6 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
 
     setRegLoading(true);
     try {
-      // Gửi nguyên 1 cục payload lên registerCustomer
       const result = await registerCustomer({
         fullName,
         email: regEmail,
@@ -167,7 +167,20 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
     <div className="login-page">
       <div className="login-left">
         <div className="login-hero fade-in-up">
-          <span className="hero-icon">🏸</span>
+          <span
+            className="hero-icon"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: 56,
+              height: 56,
+              borderRadius: "50%",
+              backgroundColor: "rgba(255, 255, 255, 0.12)",
+              color: "#ffffff",
+            }}>
+            <SportsTennisOutlined sx={{ fontSize: 32 }} />
+          </span>
           <h1>
             BadmintonHub
             <br />
@@ -231,16 +244,18 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                 variant="outlined"
                 size="small"
                 sx={{ mb: 2 }}
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton
-                        onClick={() => setShowPassword(!showPassword)}
-                        size="small">
-                        {showPassword ? <VisibilityOff /> : <Visibility />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
+                slotProps={{
+                  input: {
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          onClick={() => setShowPassword(!showPassword)}
+                          size="small">
+                          {showPassword ? <VisibilityOff /> : <Visibility />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  },
                 }}
               />
               {error && (
@@ -351,16 +366,18 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                 variant="outlined"
                 size="small"
                 sx={{ mb: 2 }}
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton
-                        onClick={() => setShowRegPassword(!showRegPassword)}
-                        size="small">
-                        {showRegPassword ? <VisibilityOff /> : <Visibility />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
+                slotProps={{
+                  input: {
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          onClick={() => setShowRegPassword(!showRegPassword)}
+                          size="small">
+                          {showRegPassword ? <VisibilityOff /> : <Visibility />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  },
                 }}
               />
               <TextField

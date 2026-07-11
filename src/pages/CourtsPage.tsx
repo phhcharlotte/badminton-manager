@@ -8,9 +8,14 @@ import {
   Alert,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
-import { useCourtStore } from "../store/courtStore";
+import SearchOffIcon from "@mui/icons-material/SearchOff";
+import StadiumIcon from "@mui/icons-material/Stadium";
+import StarIcon from "@mui/icons-material/Star";
+import BoltIcon from "@mui/icons-material/Bolt";
+import EventNoteIcon from "@mui/icons-material/EventNote";
+import { useCourtStore } from "@/store/courtStore";
 import { Court, CourtType } from "@/types/Courts/index";
-import { formatCurrency } from "../utils/helpers";
+import { formatCurrency } from "@/utils/helpers";
 
 interface Props {
   onSelectCourt?: (court: Court) => void;
@@ -25,8 +30,6 @@ const CourtsPage: React.FC<Props> = ({
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<"all" | CourtType>("all");
 
-  // Goi API moi khi doi bo loc loai san (loc server-side)
-  // Search van loc client-side de go muot, khong debounce goi API lien tuc
   useEffect(() => {
     fetchCourts(typeFilter === "all" ? undefined : { type: typeFilter });
   }, [typeFilter]); // eslint-disable-line
@@ -42,7 +45,10 @@ const CourtsPage: React.FC<Props> = ({
   return (
     <div className="fade-in-up">
       <div className="page-header">
-        <div className="page-title">🏟️ Danh sách sân cầu lông</div>
+        <div className="page-title">
+          <StadiumIcon sx={{ verticalAlign: "middle", mr: 1 }} />
+          Danh sách sân cầu lông
+        </div>
         <div className="page-subtitle">
           Xem tất cả sân hiện có và đặt lịch phù hợp
         </div>
@@ -71,8 +77,20 @@ const CourtsPage: React.FC<Props> = ({
           onChange={(e) => setTypeFilter(e.target.value as "all" | CourtType)}
           sx={{ minWidth: 140 }}>
           <MenuItem value="all">Tất cả</MenuItem>
-          <MenuItem value="fixed">⭐ Cố định</MenuItem>
-          <MenuItem value="casual">🎯 Vãng lai</MenuItem>
+          <MenuItem value="fixed">
+            <StarIcon
+              fontSize="small"
+              sx={{ verticalAlign: "middle", mr: 1 }}
+            />
+            Cố định
+          </MenuItem>
+          <MenuItem value="casual">
+            <BoltIcon
+              fontSize="small"
+              sx={{ verticalAlign: "middle", mr: 1 }}
+            />
+            Vãng lai
+          </MenuItem>
         </TextField>
         <div style={{ flex: 1 }} />
         <span style={{ fontSize: 13, color: "#718096" }}>
@@ -80,7 +98,6 @@ const CourtsPage: React.FC<Props> = ({
         </span>
       </div>
 
-      {/* Price info banner */}
       <div
         style={{
           display: "flex",
@@ -99,13 +116,13 @@ const CourtsPage: React.FC<Props> = ({
             flex: 1,
             border: "1px solid #f59e0b",
           }}>
-          <span style={{ fontSize: 28 }}>⭐</span>
+          <StarIcon sx={{ fontSize: 28, color: "#b45309" }} />
           <div>
             <div style={{ fontWeight: 800, color: "#92400e" }}>
               Sân cố định (Thuê dài hạn)
             </div>
             <div style={{ fontSize: 13, color: "#b45309" }}>
-              Giá ưu đãi cho khách đặt cố định hàng tuần
+              Đăng ký theo gói tối thiểu 1 tháng, lặp lại hàng tuần
             </div>
           </div>
         </div>
@@ -120,7 +137,7 @@ const CourtsPage: React.FC<Props> = ({
             flex: 1,
             border: "1px solid #3b82f6",
           }}>
-          <span style={{ fontSize: 28 }}>🎯</span>
+          <BoltIcon sx={{ fontSize: 28, color: "#1e40af" }} />
           <div>
             <div style={{ fontWeight: 800, color: "#1e40af" }}>
               Sân vãng lai (Đặt từng lần)
@@ -132,21 +149,18 @@ const CourtsPage: React.FC<Props> = ({
         </div>
       </div>
 
-      {/* Loi tai du lieu */}
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
           {error}
         </Alert>
       )}
 
-      {/* Loading */}
       {isLoading && (
         <div style={{ display: "flex", justifyContent: "center", padding: 60 }}>
           <CircularProgress />
         </div>
       )}
 
-      {/* Danh sach san */}
       {!isLoading && !error && (
         <>
           <div className="court-grid">
@@ -158,7 +172,18 @@ const CourtsPage: React.FC<Props> = ({
                 <div className="court-card-image">
                   {court.image}
                   <div className={`court-type-badge ${court.type}`}>
-                    {court.type === "fixed" ? "⭐ Cố định" : "🎯 Vãng lai"}
+                    {court.type === "fixed" ? (
+                      <StarIcon
+                        fontSize="small"
+                        sx={{ verticalAlign: "middle", mr: 0.5 }}
+                      />
+                    ) : (
+                      <BoltIcon
+                        fontSize="small"
+                        sx={{ verticalAlign: "middle", mr: 0.5 }}
+                      />
+                    )}
+                    {court.type === "fixed" ? "Cố định" : "Vãng lai"}
                   </div>
                 </div>
                 <div className="court-card-body">
@@ -181,8 +206,12 @@ const CourtsPage: React.FC<Props> = ({
                         fontWeight: 700,
                         fontSize: 14,
                         cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 6,
                       }}>
-                      📅 Đặt ngay
+                      <EventNoteIcon fontSize="small" /> Đặt ngay
                     </button>
                   )}
                 </div>
@@ -197,7 +226,7 @@ const CourtsPage: React.FC<Props> = ({
                 padding: "60px 20px",
                 color: "#718096",
               }}>
-              <div style={{ fontSize: 48, marginBottom: 16 }}>🔍</div>
+              <SearchOffIcon sx={{ fontSize: 48, mb: 2, color: "#cbd5e1" }} />
               <div style={{ fontSize: 18, fontWeight: 700 }}>
                 Không tìm thấy sân nào
               </div>

@@ -29,20 +29,30 @@ export const TIME_SLOTS: string[] = [
 
 export type BookingStatus = "pending" | "confirmed" | "cancelled" | "completed";
 
+export type BookingType = "casual" | "fixed";
+
 export interface Booking {
   _id: string;
   user: string;
   userName: string;
   court: string;
   courtName: string;
-  courtType: CourtType;
-  date: string; // YYYY-MM-DD
+  courtType: "fixed" | "casual";
+  bookingType: BookingType;
+  date: string;
   slots: string[];
   startTime: string;
   endTime: string;
   hours: number;
   pricePerHour: number;
   totalPrice: number;
+  // Chi co gia tri khi bookingType = 'fixed'
+  durationMonths?: 1 | 2 | 3 | 6 | 12;
+  startDate?: string;
+  endDate?: string;
+  occurrenceDates?: string[];
+  discountPercent?: number;
+  originalTotalPrice?: number;
   status: BookingStatus;
   notes: string;
   cancelledBy?: string | null;

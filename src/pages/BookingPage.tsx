@@ -1,11 +1,12 @@
 // src/pages/BookingPage.tsx
-import React, { useState, useMemo, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Button,
   TextField,
   Alert,
   Chip,
   CircularProgress,
+  Box,
 } from "@mui/material";
 import { DateCalendar } from "@mui/x-date-pickers/DateCalendar";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
@@ -16,7 +17,11 @@ import { useCourtStore } from "../store/courtStore";
 import { useBookingStore } from "../store/bookingStore";
 import { useAuthStore } from "../store/authStore";
 import { getSocket } from "../lib/socket";
-import { getAvailabilityApi } from "@/apis/booking.api";
+import {
+  getAvailabilityApi,
+  getFixedDurationsApi,
+  FixedDurationOption,
+} from "@/apis/booking.api";
 import {
   formatCurrency,
   areConsecutive,
@@ -27,11 +32,61 @@ import { useNotification } from "../hooks/useNotification";
 import { Court } from "@/types/Courts";
 import { TIME_SLOTS } from "@/types/Booking";
 
+// ── MUI Icons (thay cho emoji) ──
+import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
+import SportsTennisIcon from "@mui/icons-material/SportsTennis";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import SportsIcon from "@mui/icons-material/Sports";
+import StarIcon from "@mui/icons-material/Star";
+import GpsFixedIcon from "@mui/icons-material/GpsFixed";
+import SearchOffIcon from "@mui/icons-material/SearchOff";
+import AccessTimeIcon from "@mui/icons-material/AccessTime";
+import LockIcon from "@mui/icons-material/Lock";
+import WarningAmberIcon from "@mui/icons-material/WarningAmber";
+import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
+import PersonIcon from "@mui/icons-material/Person";
+import PaymentsIcon from "@mui/icons-material/Payments";
+import LocalOfferIcon from "@mui/icons-material/LocalOffer";
+import EventRepeatIcon from "@mui/icons-material/EventRepeat";
+import RepeatIcon from "@mui/icons-material/Repeat";
+import EventIcon from "@mui/icons-material/Event";
+
 type Step = 1 | 2 | 3;
+
+// Nhan icon + text dung chung (tranh lap lai style)
+const IconLabel: React.FC<{
+  icon: React.ReactNode;
+  children: React.ReactNode;
+  gap?: number;
+}> = ({ icon, children, gap = 6 }) => (
+  <Box
+    component="span"
+    sx={{ display: "inline-flex", alignItems: "center", gap: `${gap}px` }}>
+    {icon}
+    {children}
+  </Box>
+);
+
+// Tinh truoc danh sach ngay cu the trong goi co dinh (chi de HIEN THI cho nguoi dung xem
+// truoc, con so lieu chinh xac cuoi cung luon do BE tra ve sau khi dat thanh cong)
+const buildFixedOccurrencesPreview = (
+  startDate: string,
+  months: number,
+): string[] => {
+  const start = dayjs(startDate);
+  const end = start.add(months, "month");
+  const dates: string[] = [];
+  let current = start;
+  while (current.isBefore(end)) {
+    dates.push(current.format("YYYY-MM-DD"));
+    current = current.add(7, "day");
+  }
+  return dates;
+};
 
 const BookingPage: React.FC = () => {
   const { courts, fetchCourts } = useCourtStore();
-  const { createBooking } = useBookingStore();
+  const { createBooking, createFixedBooking } = useBookingStore();
   const { currentUser } = useAuthStore();
   const { notification, notify, close: closeNotif } = useNotification();
 
@@ -49,15 +104,25 @@ const BookingPage: React.FC = () => {
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
+  // ── Rieng cho luong san co dinh ──
+  const isFixedFlow = selectedCourt?.type === "fixed";
+  const [fixedDurations, setFixedDurations] = useState<FixedDurationOption[]>(
+    [],
+  );
+  const [selectedDuration, setSelectedDuration] =
+    useState<FixedDurationOption | null>(null);
+
   const dateStr = selectedDate.format("YYYY-MM-DD");
   const todayStr = dayjs().format("YYYY-MM-DD");
   const currentHour = dayjs().hour();
 
   useEffect(() => {
     fetchCourts();
+    getFixedDurationsApi()
+      .then(setFixedDurations)
+      .catch(() => notify("Không tải được danh sách gói cố định!", "error"));
   }, []); // eslint-disable-line
 
-  // Tai danh sach khung gio da bi dat khi vao buoc 2 (chon ngay/gio) hoac doi san/ngay
   const loadAvailability = useCallback(async () => {
     if (!selectedCourt) return;
     setLoadingSlots(true);
@@ -75,8 +140,9 @@ const BookingPage: React.FC = () => {
     }
   }, [step, selectedCourt, dateStr]); // eslint-disable-line
 
-  // ── Real-time: vao "phong" (san, ngay) dang xem, tu dong cap nhat khi co nguoi
-  // khac dat/huy cung san cung ngay, KHONG can F5 hay tu goi lai API ──
+  // Real-time: vao "phong" (san, ngay dang xem) de nhan cap nhat ngay lap tuc.
+  // Voi san co dinh, day chi la kiem tra so bo cho NGAY BAT DAU - xung dot o cac
+  // tuan sau van duoc BE kiem tra day du khi bam dang ky (transaction chuan).
   useEffect(() => {
     if (step !== 2 || !selectedCourt) return;
     const socket = getSocket();
@@ -92,14 +158,11 @@ const BookingPage: React.FC = () => {
       if (payload.courtId !== selectedCourt._id || payload.date !== dateStr)
         return;
       setBookedSlots(payload.bookedSlots);
-
-      // Neu khung gio minh vua chon bi nguoi khac vua "cuop" mat, tu dong bo chon
-      // va bao cho nguoi dung biet, thay vi de ho bam "Dat san" roi moi bao loi.
       setSelectedSlots((prev) => {
         const taken = prev.filter((s) => payload.bookedSlots.includes(s));
         if (taken.length > 0) {
           notify(
-            "⚠️ Một số khung giờ bạn chọn vừa được người khác đặt trước, đã tự bỏ chọn.",
+            "Một số khung giờ bạn chọn vừa được người khác đặt trước, đã tự bỏ chọn.",
             "warning",
           );
           return prev.filter((s) => !payload.bookedSlots.includes(s));
@@ -109,7 +172,6 @@ const BookingPage: React.FC = () => {
     };
 
     socket.on("slots:updated", handleSlotsUpdated);
-
     return () => {
       socket.emit("slots:leave", { courtId: selectedCourt._id, date: dateStr });
       socket.off("slots:updated", handleSlotsUpdated);
@@ -145,7 +207,39 @@ const BookingPage: React.FC = () => {
     hours,
   } = buildTimeRange(selectedSlots);
   const isContiguous = areConsecutive(selectedSlots);
-  const totalPrice = selectedCourt ? hours * selectedCourt.pricePerHour : 0;
+
+  // Gia cho luong dat le (casual)
+  const casualTotalPrice = selectedCourt
+    ? hours * selectedCourt.pricePerHour
+    : 0;
+
+  // Preview cho luong san co dinh (chi mang tinh tham khao, BE se tinh chinh xac lai)
+  const fixedPreview = useMemo(() => {
+    if (
+      !isFixedFlow ||
+      !selectedCourt ||
+      !selectedDuration ||
+      selectedSlots.length === 0
+    )
+      return null;
+    const occurrences = buildFixedOccurrencesPreview(
+      dateStr,
+      selectedDuration.months,
+    );
+    const originalTotal =
+      hours * selectedCourt.pricePerHour * occurrences.length;
+    const finalTotal = Math.round(
+      originalTotal * (1 - selectedDuration.discountPercent / 100),
+    );
+    return { occurrences, originalTotal, finalTotal };
+  }, [
+    isFixedFlow,
+    selectedCourt,
+    selectedDuration,
+    selectedSlots,
+    dateStr,
+    hours,
+  ]);
 
   const filteredCourts = activeCourts.filter(
     (c) => courtTypeFilter === "all" || c.type === courtTypeFilter,
@@ -154,6 +248,7 @@ const BookingPage: React.FC = () => {
   const handleSelectCourt = (court: Court) => {
     setSelectedCourt(court);
     setSelectedSlots([]);
+    setSelectedDuration(null);
     setStep(2);
   };
 
@@ -174,42 +269,59 @@ const BookingPage: React.FC = () => {
       return;
 
     setSubmitting(true);
-    const result = await createBooking({
-      courtId: selectedCourt._id,
-      date: dateStr,
-      slots: selectedSlots,
-      notes,
-    });
+
+    const result = isFixedFlow
+      ? selectedDuration
+        ? await createFixedBooking({
+            courtId: selectedCourt._id,
+            startDate: dateStr,
+            slots: selectedSlots,
+            durationMonths: selectedDuration.months,
+            notes,
+          })
+        : { success: false, message: "Vui lòng chọn gói thời hạn!" }
+      : await createBooking({
+          courtId: selectedCourt._id,
+          date: dateStr,
+          slots: selectedSlots,
+          notes,
+        });
+
     setSubmitting(false);
 
     if (result.success) {
       notify(result.message, "success");
       setSelectedSlots([]);
       setNotes("");
+      setSelectedDuration(null);
       setStep(1);
       setSelectedCourt(null);
-    } else if (result.conflict) {
-      // Bi trung lich do nguoi khac dat truoc dung luc minh bam xac nhan (rat hiem gap
-      // vi da co canh bao real-time o buoc 2, nhung van co the xay ra o vai mili-giay cuoi)
+    } else if ("conflict" in result && result.conflict) {
       notify(result.message, "error");
-      await loadAvailability(); // tai lai danh sach moi nhat
+      await loadAvailability();
       setStep(2);
     } else {
       notify(result.message, "error");
     }
   };
 
-  const steps = [
-    { n: 1, label: "Chọn sân", icon: "🏸" },
-    { n: 2, label: "Chọn ngày & giờ", icon: "📅" },
-    { n: 3, label: "Xác nhận đặt", icon: "✅" },
+  const steps: { n: Step; label: string; icon: React.ReactNode }[] = [
+    { n: 1, label: "Chọn sân", icon: <SportsTennisIcon fontSize="small" /> },
+    {
+      n: 2,
+      label: isFixedFlow ? "Chọn ngày, giờ & gói" : "Chọn ngày & giờ",
+      icon: <CalendarMonthIcon fontSize="small" />,
+    },
+    { n: 3, label: "Xác nhận đặt", icon: <CheckCircleIcon fontSize="small" /> },
   ];
 
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="vi">
       <div className="fade-in-up">
         <div className="page-header">
-          <div className="page-title">📅 Đặt sân cầu lông</div>
+          <div className="page-title">
+            <IconLabel icon={<CalendarMonthIcon />}>Đặt sân cầu lông</IconLabel>
+          </div>
           <div className="page-subtitle">
             Thực hiện theo từng bước để hoàn tất đặt sân
           </div>
@@ -259,7 +371,7 @@ const BookingPage: React.FC = () => {
                       step === s.n ? "0 4px 14px rgba(26,71,42,0.3)" : "none",
                     transition: "all 0.3s",
                   }}>
-                  {step > s.n ? "✓" : s.n}
+                  {step > s.n ? <CheckCircleIcon fontSize="small" /> : s.n}
                 </div>
                 <div>
                   <div
@@ -276,6 +388,9 @@ const BookingPage: React.FC = () => {
                       fontSize: 13,
                       fontWeight: step === s.n ? 800 : 600,
                       color: step >= s.n ? "#1a472a" : "#9ca3af",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 4,
                     }}>
                     {s.icon} {s.label}
                   </div>
@@ -314,12 +429,21 @@ const BookingPage: React.FC = () => {
               {(["all", "fixed", "casual"] as const).map((t) => (
                 <Chip
                   key={t}
+                  icon={
+                    t === "all" ? (
+                      <SportsIcon />
+                    ) : t === "fixed" ? (
+                      <StarIcon />
+                    ) : (
+                      <GpsFixedIcon />
+                    )
+                  }
                   label={
                     t === "all"
-                      ? "🏟️ Tất cả"
+                      ? "Tất cả"
                       : t === "fixed"
-                        ? "⭐ Cố định"
-                        : "🎯 Vãng lai"
+                        ? "Cố định"
+                        : "Vãng lai"
                   }
                   variant={courtTypeFilter === t ? "filled" : "outlined"}
                   color={courtTypeFilter === t ? "success" : "default"}
@@ -333,6 +457,18 @@ const BookingPage: React.FC = () => {
               </span>
             </div>
 
+            <Alert severity="info" sx={{ mb: 2, borderRadius: 2 }}>
+              <IconLabel icon={<StarIcon fontSize="inherit" />} gap={4}>
+                <strong>Sân cố định</strong>
+              </IconLabel>{" "}
+              yêu cầu đăng ký theo gói tối thiểu <strong>1 tháng</strong> (lặp
+              lại hàng tuần).{" "}
+              <IconLabel icon={<GpsFixedIcon fontSize="inherit" />} gap={4}>
+                <strong>Sân vãng lai</strong>
+              </IconLabel>{" "}
+              đặt tự do theo từng buổi.
+            </Alert>
+
             <div className="court-grid">
               {filteredCourts.map((court) => (
                 <div
@@ -342,7 +478,17 @@ const BookingPage: React.FC = () => {
                   <div className="court-card-image">
                     {court.image}
                     <div className={`court-type-badge ${court.type}`}>
-                      {court.type === "fixed" ? "⭐ Cố định" : "🎯 Vãng lai"}
+                      <IconLabel
+                        icon={
+                          court.type === "fixed" ? (
+                            <StarIcon fontSize="inherit" />
+                          ) : (
+                            <GpsFixedIcon fontSize="inherit" />
+                          )
+                        }
+                        gap={4}>
+                        {court.type === "fixed" ? "Cố định" : "Vãng lai"}
+                      </IconLabel>
                     </div>
                   </div>
                   <div className="court-card-body">
@@ -364,8 +510,20 @@ const BookingPage: React.FC = () => {
                         fontWeight: 700,
                         fontSize: 14,
                         cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 6,
                       }}>
-                      📅 Chọn sân này
+                      {court.type === "fixed" ? (
+                        <>
+                          <EventRepeatIcon fontSize="small" /> Đăng ký gói
+                        </>
+                      ) : (
+                        <>
+                          <CalendarMonthIcon fontSize="small" /> Chọn sân này
+                        </>
+                      )}
                     </button>
                   </div>
                 </div>
@@ -378,7 +536,7 @@ const BookingPage: React.FC = () => {
                     padding: "60px 20px",
                     color: "#718096",
                   }}>
-                  <div style={{ fontSize: 48, marginBottom: 12 }}>🔍</div>
+                  <SearchOffIcon sx={{ fontSize: 48, mb: 1.5 }} />
                   <div style={{ fontWeight: 700, fontSize: 16 }}>
                     Không tìm thấy sân phù hợp
                   </div>
@@ -388,7 +546,7 @@ const BookingPage: React.FC = () => {
           </div>
         )}
 
-        {/* ══ STEP 2: Calendar + Time Slots ══ */}
+        {/* ══ STEP 2: Calendar + Time Slots (+ goi neu la san co dinh) ══ */}
         {step === 2 && selectedCourt && (
           <div className="slide-in-right">
             <div
@@ -418,11 +576,17 @@ const BookingPage: React.FC = () => {
                     color: "#2d6a4f",
                     fontSize: 13,
                     marginTop: 2,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 4,
                   }}>
-                  {selectedCourt.type === "fixed"
-                    ? "⭐ Cố định"
-                    : "🎯 Vãng lai"}{" "}
-                  • {formatCurrency(selectedCourt.pricePerHour)}/giờ
+                  {selectedCourt.type === "fixed" ? (
+                    <StarIcon fontSize="inherit" />
+                  ) : (
+                    <GpsFixedIcon fontSize="inherit" />
+                  )}
+                  {selectedCourt.type === "fixed" ? "Cố định" : "Vãng lai"} •{" "}
+                  {formatCurrency(selectedCourt.pricePerHour)}/giờ
                 </div>
               </div>
               <Button
@@ -431,6 +595,7 @@ const BookingPage: React.FC = () => {
                 onClick={() => {
                   setStep(1);
                   setSelectedSlots([]);
+                  setSelectedDuration(null);
                 }}
                 sx={{
                   borderColor: "#52b788",
@@ -441,6 +606,15 @@ const BookingPage: React.FC = () => {
               </Button>
             </div>
 
+            {isFixedFlow && (
+              <Alert severity="info" sx={{ mb: 2, borderRadius: 2 }}>
+                Chọn <strong>ngày bắt đầu</strong> — hệ thống sẽ tự động giữ
+                khung giờ này vào đúng thứ đó
+                <strong> mỗi tuần</strong> trong suốt thời hạn gói bạn chọn bên
+                dưới.
+              </Alert>
+            )}
+
             <div
               style={{
                 display: "grid",
@@ -448,13 +622,21 @@ const BookingPage: React.FC = () => {
                 gap: 20,
               }}>
               <div className="card">
-                <div className="card-header">📆 Chọn ngày</div>
+                <div className="card-header">
+                  <IconLabel icon={<CalendarMonthIcon fontSize="small" />}>
+                    {isFixedFlow ? "Chọn ngày bắt đầu" : "Chọn ngày"}
+                  </IconLabel>
+                </div>
                 <div style={{ padding: "0 4px 8px" }}>
                   <DateCalendar
                     value={selectedDate}
                     onChange={handleDateChange}
                     minDate={dayjs()}
-                    maxDate={dayjs().add(30, "day")}
+                    maxDate={
+                      isFixedFlow
+                        ? dayjs().add(60, "day")
+                        : dayjs().add(30, "day")
+                    }
                     sx={{
                       width: "100%",
                       "& .MuiPickersDay-root.Mui-selected": {
@@ -477,6 +659,60 @@ const BookingPage: React.FC = () => {
                   }}>
                   {selectedDate.format("dddd, DD/MM/YYYY")}
                 </div>
+
+                {isFixedFlow && (
+                  <div style={{ margin: "0 16px 16px" }}>
+                    <div
+                      style={{
+                        fontSize: 12,
+                        fontWeight: 700,
+                        color: "#4a5568",
+                        marginBottom: 8,
+                      }}>
+                      Chọn thời hạn gói:
+                    </div>
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 6,
+                      }}>
+                      {fixedDurations.map((d) => (
+                        <div
+                          key={d.months}
+                          onClick={() => setSelectedDuration(d)}
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            padding: "8px 12px",
+                            borderRadius: 8,
+                            cursor: "pointer",
+                            border:
+                              selectedDuration?.months === d.months
+                                ? "2px solid #1a472a"
+                                : "1px solid #e5e7eb",
+                            background:
+                              selectedDuration?.months === d.months
+                                ? "#e8f5e9"
+                                : "white",
+                          }}>
+                          <span style={{ fontWeight: 700, fontSize: 13 }}>
+                            {d.label}
+                          </span>
+                          {d.discountPercent > 0 && (
+                            <Chip
+                              label={`-${d.discountPercent}%`}
+                              size="small"
+                              color="success"
+                              sx={{ fontWeight: 700, height: 20 }}
+                            />
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="card">
@@ -487,12 +723,12 @@ const BookingPage: React.FC = () => {
                       justifyContent: "space-between",
                       alignItems: "center",
                     }}>
-                    <span>
-                      ⏰ Khung giờ{" "}
+                    <IconLabel icon={<AccessTimeIcon fontSize="small" />}>
+                      Khung giờ
                       {loadingSlots && (
                         <CircularProgress size={12} sx={{ ml: 1 }} />
                       )}
-                    </span>
+                    </IconLabel>
                     {selectedSlots.length > 0 && (
                       <Chip
                         label={`${selectedSlots.length} giờ đã chọn`}
@@ -521,7 +757,7 @@ const BookingPage: React.FC = () => {
 
                   {!isContiguous && selectedSlots.length > 1 && (
                     <Alert severity="warning" sx={{ mb: 2, borderRadius: 2 }}>
-                      ⚠️ Vui lòng chọn các khung giờ{" "}
+                      Vui lòng chọn các khung giờ{" "}
                       <strong>liên tiếp nhau</strong>!
                     </Alert>
                   )}
@@ -538,17 +774,52 @@ const BookingPage: React.FC = () => {
                           <span className="slot-time">
                             {time}–{String(endH).padStart(2, "0")}:00
                           </span>
-                          <span className="slot-price">
-                            {state === "booked"
-                              ? "🔒 Đã đặt"
-                              : state === "past"
-                                ? "⏰ Đã qua"
-                                : formatCurrency(selectedCourt.pricePerHour)}
+                          <span
+                            className="slot-price"
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              gap: 4,
+                            }}>
+                            {state === "booked" ? (
+                              <>
+                                <LockIcon fontSize="inherit" /> Đã đặt
+                              </>
+                            ) : state === "past" ? (
+                              <>
+                                <AccessTimeIcon fontSize="inherit" /> Đã qua
+                              </>
+                            ) : (
+                              formatCurrency(selectedCourt.pricePerHour)
+                            )}
                           </span>
                         </button>
                       );
                     })}
                   </div>
+
+                  {isFixedFlow && fixedPreview && (
+                    <Alert severity="success" sx={{ mt: 2, borderRadius: 2 }}>
+                      Lịch dự kiến:{" "}
+                      <strong>{fixedPreview.occurrences.length} buổi</strong>,
+                      từ{" "}
+                      <strong>
+                        {dayjs(fixedPreview.occurrences[0]).format(
+                          "DD/MM/YYYY",
+                        )}
+                      </strong>{" "}
+                      đến{" "}
+                      <strong>
+                        {dayjs(
+                          fixedPreview.occurrences[
+                            fixedPreview.occurrences.length - 1
+                          ],
+                        ).format("DD/MM/YYYY")}
+                      </strong>{" "}
+                      (mỗi {selectedDate.format("dddd")})
+                    </Alert>
+                  )}
                 </div>
               </div>
             </div>
@@ -573,7 +844,7 @@ const BookingPage: React.FC = () => {
                 ← Quay lại
               </Button>
               <div style={{ flex: 1 }} />
-              {selectedSlots.length > 0 && isContiguous && (
+              {selectedSlots.length > 0 && isContiguous && !isFixedFlow && (
                 <div
                   style={{
                     background: "white",
@@ -603,14 +874,53 @@ const BookingPage: React.FC = () => {
                         fontSize: 18,
                         color: "#1a472a",
                       }}>
-                      {formatCurrency(totalPrice)}
+                      {formatCurrency(casualTotalPrice)}
+                    </div>
+                  </div>
+                </div>
+              )}
+              {isFixedFlow && fixedPreview && selectedDuration && (
+                <div
+                  style={{
+                    background: "white",
+                    borderRadius: 12,
+                    padding: "12px 20px",
+                    border: "2px solid #52b788",
+                    display: "flex",
+                    gap: 24,
+                    alignItems: "center",
+                    boxShadow: "0 2px 8px rgba(26,71,42,0.08)",
+                  }}>
+                  <div>
+                    <div style={{ fontSize: 11, color: "#718096" }}>
+                      Số buổi
+                    </div>
+                    <div style={{ fontWeight: 700, color: "#1a472a" }}>
+                      {fixedPreview.occurrences.length} buổi
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 11, color: "#718096" }}>
+                      Tổng tiền (ước tính)
+                    </div>
+                    <div
+                      style={{
+                        fontWeight: 800,
+                        fontSize: 18,
+                        color: "#1a472a",
+                      }}>
+                      {formatCurrency(fixedPreview.finalTotal)}
                     </div>
                   </div>
                 </div>
               )}
               <Button
                 variant="contained"
-                disabled={selectedSlots.length === 0 || !isContiguous}
+                disabled={
+                  selectedSlots.length === 0 ||
+                  !isContiguous ||
+                  (isFixedFlow && !selectedDuration)
+                }
                 onClick={() => setStep(3)}
                 sx={{
                   background: "linear-gradient(135deg,#1a472a,#2d6a4f)",
@@ -631,7 +941,11 @@ const BookingPage: React.FC = () => {
           <div className="slide-in-right">
             <div style={{ maxWidth: 560, margin: "0 auto" }}>
               <div className="card">
-                <div className="card-header">✅ Xác nhận thông tin đặt sân</div>
+                <div className="card-header">
+                  <IconLabel icon={<CheckCircleIcon fontSize="small" />}>
+                    Xác nhận thông tin đặt sân
+                  </IconLabel>
+                </div>
                 <div className="card-body">
                   <div
                     style={{
@@ -649,46 +963,170 @@ const BookingPage: React.FC = () => {
                       <div style={{ fontWeight: 800, fontSize: 21 }}>
                         {selectedCourt.name}
                       </div>
-                      <div style={{ opacity: 0.8, fontSize: 13, marginTop: 2 }}>
+                      <div
+                        style={{
+                          opacity: 0.8,
+                          fontSize: 13,
+                          marginTop: 2,
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 4,
+                        }}>
+                        {selectedCourt.type === "fixed" ? (
+                          <StarIcon fontSize="inherit" />
+                        ) : (
+                          <GpsFixedIcon fontSize="inherit" />
+                        )}
                         {selectedCourt.type === "fixed"
-                          ? "⭐ Sân cố định"
-                          : "🎯 Sân vãng lai"}
+                          ? "Sân cố định"
+                          : "Sân vãng lai"}
                       </div>
                     </div>
                   </div>
 
-                  <div className="booking-summary" style={{ marginBottom: 20 }}>
-                    {[
-                      {
-                        label: "📆 Ngày đặt",
-                        value: selectedDate.format("dddd, DD/MM/YYYY"),
-                      },
-                      {
-                        label: "⏰ Khung giờ",
-                        value: `${startTime} – ${endTime}`,
-                      },
-                      { label: "🕐 Số giờ", value: `${hours} giờ` },
-                      {
-                        label: "💰 Đơn giá",
-                        value: `${formatCurrency(selectedCourt.pricePerHour)}/giờ`,
-                      },
-                      {
-                        label: "👤 Đặt bởi",
-                        value: currentUser?.fullName || "",
-                      },
-                    ].map((r) => (
-                      <div className="summary-row" key={r.label}>
-                        <span className="summary-label">{r.label}</span>
-                        <span className="summary-value">{r.value}</span>
+                  {!isFixedFlow ? (
+                    <div
+                      className="booking-summary"
+                      style={{ marginBottom: 20 }}>
+                      {[
+                        {
+                          icon: <CalendarMonthIcon fontSize="inherit" />,
+                          label: "Ngày đặt",
+                          value: selectedDate.format("dddd, DD/MM/YYYY"),
+                        },
+                        {
+                          icon: <AccessTimeIcon fontSize="inherit" />,
+                          label: "Khung giờ",
+                          value: `${startTime} – ${endTime}`,
+                        },
+                        {
+                          icon: <AccessTimeIcon fontSize="inherit" />,
+                          label: "Số giờ",
+                          value: `${hours} giờ`,
+                        },
+                        {
+                          icon: <AttachMoneyIcon fontSize="inherit" />,
+                          label: "Đơn giá",
+                          value: `${formatCurrency(selectedCourt.pricePerHour)}/giờ`,
+                        },
+                        {
+                          icon: <PersonIcon fontSize="inherit" />,
+                          label: "Đặt bởi",
+                          value: currentUser?.fullName || "",
+                        },
+                      ].map((r) => (
+                        <div className="summary-row" key={r.label}>
+                          <span className="summary-label">
+                            <IconLabel icon={r.icon} gap={4}>
+                              {r.label}
+                            </IconLabel>
+                          </span>
+                          <span className="summary-value">{r.value}</span>
+                        </div>
+                      ))}
+                      <div className="summary-row total">
+                        <span className="summary-label">
+                          <IconLabel
+                            icon={<PaymentsIcon fontSize="inherit" />}
+                            gap={4}>
+                            Tổng thanh toán
+                          </IconLabel>
+                        </span>
+                        <span className="summary-value">
+                          {formatCurrency(casualTotalPrice)}
+                        </span>
                       </div>
-                    ))}
-                    <div className="summary-row total">
-                      <span className="summary-label">💵 Tổng thanh toán</span>
-                      <span className="summary-value">
-                        {formatCurrency(totalPrice)}
-                      </span>
                     </div>
-                  </div>
+                  ) : (
+                    fixedPreview &&
+                    selectedDuration && (
+                      <div
+                        className="booking-summary"
+                        style={{ marginBottom: 20 }}>
+                        {[
+                          {
+                            icon: <CalendarMonthIcon fontSize="inherit" />,
+                            label: "Bắt đầu từ",
+                            value: `${selectedDate.format("dddd, DD/MM/YYYY")}`,
+                          },
+                          {
+                            icon: <AccessTimeIcon fontSize="inherit" />,
+                            label: "Khung giờ (hàng tuần)",
+                            value: `${startTime} – ${endTime}`,
+                          },
+                          {
+                            icon: <EventRepeatIcon fontSize="inherit" />,
+                            label: "Gói đăng ký",
+                            value: `${selectedDuration.label}${selectedDuration.discountPercent > 0 ? ` (giảm ${selectedDuration.discountPercent}%)` : ""}`,
+                          },
+                          {
+                            icon: <RepeatIcon fontSize="inherit" />,
+                            label: "Tổng số buổi",
+                            value: `${fixedPreview.occurrences.length} buổi`,
+                          },
+                          {
+                            icon: <EventIcon fontSize="inherit" />,
+                            label: "Kết thúc dự kiến",
+                            value: dayjs(
+                              fixedPreview.occurrences[
+                                fixedPreview.occurrences.length - 1
+                              ],
+                            ).format("DD/MM/YYYY"),
+                          },
+                          {
+                            icon: <AttachMoneyIcon fontSize="inherit" />,
+                            label: "Đơn giá",
+                            value: `${formatCurrency(selectedCourt.pricePerHour)}/giờ`,
+                          },
+                          {
+                            icon: <PersonIcon fontSize="inherit" />,
+                            label: "Đặt bởi",
+                            value: currentUser?.fullName || "",
+                          },
+                        ].map((r) => (
+                          <div className="summary-row" key={r.label}>
+                            <span className="summary-label">
+                              <IconLabel icon={r.icon} gap={4}>
+                                {r.label}
+                              </IconLabel>
+                            </span>
+                            <span className="summary-value">{r.value}</span>
+                          </div>
+                        ))}
+                        {selectedDuration.discountPercent > 0 && (
+                          <div className="summary-row">
+                            <span className="summary-label">
+                              <IconLabel
+                                icon={<LocalOfferIcon fontSize="inherit" />}
+                                gap={4}>
+                                Giá gốc
+                              </IconLabel>
+                            </span>
+                            <span
+                              className="summary-value"
+                              style={{
+                                textDecoration: "line-through",
+                                color: "#9ca3af",
+                              }}>
+                              {formatCurrency(fixedPreview.originalTotal)}
+                            </span>
+                          </div>
+                        )}
+                        <div className="summary-row total">
+                          <span className="summary-label">
+                            <IconLabel
+                              icon={<PaymentsIcon fontSize="inherit" />}
+                              gap={4}>
+                              Tổng thanh toán
+                            </IconLabel>
+                          </span>
+                          <span className="summary-value">
+                            {formatCurrency(fixedPreview.finalTotal)}
+                          </span>
+                        </div>
+                      </div>
+                    )
+                  )}
 
                   <TextField
                     fullWidth
@@ -703,6 +1141,9 @@ const BookingPage: React.FC = () => {
                   />
 
                   <Alert severity="info" sx={{ mb: 3, borderRadius: 2 }}>
+                    {isFixedFlow
+                      ? "Số buổi và tổng tiền cuối cùng sẽ được hệ thống xác nhận chính xác sau khi đăng ký (có thể lệch nhẹ nếu có ngày lễ/điều chỉnh). "
+                      : ""}
                     Sau khi đặt, nhân viên sẽ xác nhận trong{" "}
                     <strong>30 phút</strong>. Theo dõi tại trang{" "}
                     <strong>Lịch sử đặt sân</strong>.
@@ -726,6 +1167,7 @@ const BookingPage: React.FC = () => {
                       variant="contained"
                       onClick={handleBook}
                       disabled={submitting}
+                      startIcon={submitting ? undefined : <SportsTennisIcon />}
                       sx={{
                         background: "linear-gradient(135deg,#1a472a,#2d6a4f)",
                         fontWeight: 800,
@@ -735,8 +1177,10 @@ const BookingPage: React.FC = () => {
                       }}>
                       {submitting ? (
                         <CircularProgress size={20} color="inherit" />
+                      ) : isFixedFlow ? (
+                        "Xác nhận đăng ký gói"
                       ) : (
-                        "🏸 Xác nhận đặt sân"
+                        "Xác nhận đặt sân"
                       )}
                     </Button>
                   </div>

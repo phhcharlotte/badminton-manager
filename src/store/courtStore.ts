@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { Court, CourtType } from "@/types/Courts/index";
+import { Court, CourtType } from "@/types/Courts";
 import {
   listCourtsApi,
   createCourtApi,

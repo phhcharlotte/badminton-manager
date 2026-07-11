@@ -9,20 +9,60 @@ import {
   CircularProgress,
 } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
-import { useAuthStore } from "../store/authStore";
-import { UserRole } from "../types";
-import NotificationSnackbar from "../components/shared/NotificationSnackbar";
-import { useNotification } from "../hooks/useNotification";
-import { useBookingStore } from "../store/bookingStore";
-import { formatCurrency, formatDate } from "../utils/helpers";
+import PersonIcon from "@mui/icons-material/Person";
+import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
+import ManageAccountsIcon from "@mui/icons-material/ManageAccounts";
+import AssessmentIcon from "@mui/icons-material/Assessment";
+import EventNoteIcon from "@mui/icons-material/EventNote";
+import HourglassEmptyIcon from "@mui/icons-material/HourglassEmpty";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import CancelIcon from "@mui/icons-material/Cancel";
+import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
+import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
+import EditNoteIcon from "@mui/icons-material/EditNote";
+import SaveIcon from "@mui/icons-material/Save";
+import LockIcon from "@mui/icons-material/Lock";
+import HistoryIcon from "@mui/icons-material/History";
+import { useAuthStore } from "@/store/authStore";
+import { UserRole } from "@/types";
+import NotificationSnackbar from "@/components/shared/NotificationSnackbar";
+import { useNotification } from "@/hooks/useNotification";
+import { useBookingStore } from "@/store/bookingStore";
+import { formatCurrency, formatDate } from "@/utils/helpers";
 
 const ROLE_CONFIG: Record<
   UserRole,
-  { label: string; color: string; bg: string }
+  { label: string; color: string; bg: string; icon: React.ElementType }
 > = {
-  admin: { label: "👑 Admin", color: "#dc2626", bg: "#fee2e2" },
-  manager: { label: "🧑‍💼 Quản lý", color: "#d97706", bg: "#fef3c7" },
-  customer: { label: "🙋 Khách hàng", color: "#2563eb", bg: "#dbeafe" },
+  admin: {
+    label: "Admin",
+    color: "#dc2626",
+    bg: "#fee2e2",
+    icon: AdminPanelSettingsIcon,
+  },
+  manager: {
+    label: "Quản lý",
+    color: "#d97706",
+    bg: "#fef3c7",
+    icon: ManageAccountsIcon,
+  },
+  customer: {
+    label: "Khách hàng",
+    color: "#2563eb",
+    bg: "#dbeafe",
+    icon: PersonIcon,
+  },
+};
+
+type BookingStatusMap = Record<
+  string,
+  { cls: string; label: string; icon: React.ElementType }
+>;
+const STATUS_MAP: BookingStatusMap = {
+  pending: { cls: "pending", label: "Chờ xác nhận", icon: HourglassEmptyIcon },
+  confirmed: { cls: "confirmed", label: "Đã xác nhận", icon: CheckCircleIcon },
+  cancelled: { cls: "cancelled", label: "Đã huỷ", icon: CancelIcon },
+  completed: { cls: "completed", label: "Hoàn thành", icon: EmojiEventsIcon },
 };
 
 const ProfilePage: React.FC = () => {
@@ -89,8 +129,6 @@ const ProfilePage: React.FC = () => {
     setChangingPw(false);
 
     if (result.success) {
-      // Doi mat khau xong BE thu hoi token -> nguoi dung se bi dua ve LoginPage tu dong
-      // (do isAuthenticated chuyen false trong store), khong can dieu huong thu cong o day
       notify(result.message, "success");
     } else {
       setPwError(result.message);
@@ -100,7 +138,10 @@ const ProfilePage: React.FC = () => {
   return (
     <div className="fade-in-up">
       <div className="page-header">
-        <div className="page-title">👤 Hồ sơ cá nhân</div>
+        <div className="page-title">
+          <PersonIcon sx={{ verticalAlign: "middle", mr: 1 }} />
+          Hồ sơ cá nhân
+        </div>
         <div className="page-subtitle">
           Xem và cập nhật thông tin tài khoản của bạn
         </div>
@@ -113,7 +154,6 @@ const ProfilePage: React.FC = () => {
           gap: 24,
           alignItems: "start",
         }}>
-        {/* ── Left: Avatar + basic info ── */}
         <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
           <div className="card">
             <div
@@ -150,7 +190,9 @@ const ProfilePage: React.FC = () => {
               </div>
               <span
                 style={{
-                  display: "inline-block",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
                   padding: "6px 16px",
                   borderRadius: 999,
                   background: roleConf.bg,
@@ -158,44 +200,50 @@ const ProfilePage: React.FC = () => {
                   fontWeight: 700,
                   fontSize: 13,
                 }}>
+                <roleConf.icon fontSize="small" />
                 {roleConf.label}
               </span>
             </div>
           </div>
 
-          {/* Stats (chi cho customer) */}
           {currentUser.role === "customer" && (
             <div className="card">
-              <div className="card-header">📊 Thống kê</div>
+              <div className="card-header">
+                <AssessmentIcon
+                  fontSize="small"
+                  sx={{ verticalAlign: "middle", mr: 1 }}
+                />
+                Thống kê
+              </div>
               <div className="card-body">
                 {[
                   {
                     label: "Tổng lần đặt",
                     value: myBookings.length,
-                    icon: "📅",
+                    Icon: EventNoteIcon,
                   },
                   {
                     label: "Đang chờ",
                     value: myBookings.filter((b) => b.status === "pending")
                       .length,
-                    icon: "⏳",
+                    Icon: HourglassEmptyIcon,
                   },
                   {
                     label: "Đã xác nhận",
                     value: myBookings.filter((b) => b.status === "confirmed")
                       .length,
-                    icon: "✅",
+                    Icon: CheckCircleIcon,
                   },
                   {
                     label: "Hoàn thành",
                     value: myBookings.filter((b) => b.status === "completed")
                       .length,
-                    icon: "🏅",
+                    Icon: EmojiEventsIcon,
                   },
                   {
                     label: "Tổng chi tiêu",
                     value: formatCurrency(totalSpent),
-                    icon: "💰",
+                    Icon: AttachMoneyIcon,
                   },
                 ].map((s) => (
                   <div
@@ -207,8 +255,15 @@ const ProfilePage: React.FC = () => {
                       padding: "10px 0",
                       borderBottom: "1px dashed #e5e7eb",
                     }}>
-                    <span style={{ fontSize: 13, color: "#718096" }}>
-                      {s.icon} {s.label}
+                    <span
+                      style={{
+                        fontSize: 13,
+                        color: "#718096",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 6,
+                      }}>
+                      <s.Icon fontSize="small" /> {s.label}
                     </span>
                     <span
                       style={{
@@ -225,9 +280,7 @@ const ProfilePage: React.FC = () => {
           )}
         </div>
 
-        {/* ── Right: Edit forms ── */}
         <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-          {/* Personal info */}
           <div className="card">
             <div className="card-header">
               <div
@@ -236,7 +289,13 @@ const ProfilePage: React.FC = () => {
                   justifyContent: "space-between",
                   alignItems: "center",
                 }}>
-                <span>📝 Thông tin cá nhân</span>
+                <span>
+                  <EditNoteIcon
+                    fontSize="small"
+                    sx={{ verticalAlign: "middle", mr: 1 }}
+                  />
+                  Thông tin cá nhân
+                </span>
                 {!editMode && (
                   <Button
                     size="small"
@@ -247,7 +306,7 @@ const ProfilePage: React.FC = () => {
                       color: "#1a472a",
                       fontWeight: 700,
                     }}>
-                    ✏️ Chỉnh sửa
+                    Chỉnh sửa
                   </Button>
                 )}
               </div>
@@ -285,6 +344,7 @@ const ProfilePage: React.FC = () => {
                       variant="contained"
                       onClick={handleSaveProfile}
                       disabled={savingProfile}
+                      startIcon={!savingProfile ? <SaveIcon /> : undefined}
                       sx={{
                         background: "linear-gradient(135deg,#1a472a,#2d6a4f)",
                         fontWeight: 700,
@@ -292,7 +352,7 @@ const ProfilePage: React.FC = () => {
                       {savingProfile ? (
                         <CircularProgress size={18} color="inherit" />
                       ) : (
-                        "💾 Lưu thay đổi"
+                        "Lưu thay đổi"
                       )}
                     </Button>
                     <Button
@@ -313,8 +373,8 @@ const ProfilePage: React.FC = () => {
                     {
                       label: "Trạng thái",
                       value: currentUser.isActive
-                        ? "✅ Đang hoạt động"
-                        : "🚫 Bị khoá",
+                        ? "Đang hoạt động"
+                        : "Bị khoá",
                     },
                     {
                       label: "Ngày tạo TK",
@@ -353,7 +413,6 @@ const ProfilePage: React.FC = () => {
             </div>
           </div>
 
-          {/* Change password */}
           <div className="card">
             <div className="card-header">
               <div
@@ -362,7 +421,13 @@ const ProfilePage: React.FC = () => {
                   justifyContent: "space-between",
                   alignItems: "center",
                 }}>
-                <span>🔒 Đổi mật khẩu</span>
+                <span>
+                  <LockIcon
+                    fontSize="small"
+                    sx={{ verticalAlign: "middle", mr: 1 }}
+                  />
+                  Đổi mật khẩu
+                </span>
                 {!pwMode && (
                   <Button
                     size="small"
@@ -446,7 +511,7 @@ const ProfilePage: React.FC = () => {
                       {changingPw ? (
                         <CircularProgress size={18} color="inherit" />
                       ) : (
-                        "🔒 Xác nhận đổi mật khẩu"
+                        "Xác nhận đổi mật khẩu"
                       )}
                     </Button>
                     <Button
@@ -473,7 +538,7 @@ const ProfilePage: React.FC = () => {
                     color: "#718096",
                     fontSize: 14,
                   }}>
-                  <span style={{ fontSize: 28 }}>🔐</span>
+                  <LockIcon sx={{ fontSize: 28, color: "#94a3b8" }} />
                   <span>
                     Để bảo mật tài khoản, hãy đổi mật khẩu định kỳ. Sau khi đổi,
                     bạn sẽ cần đăng nhập lại.
@@ -483,10 +548,15 @@ const ProfilePage: React.FC = () => {
             </div>
           </div>
 
-          {/* Recent activity (chi customer) */}
           {currentUser.role === "customer" && myBookings.length > 0 && (
             <div className="card">
-              <div className="card-header">🕐 Hoạt động gần đây</div>
+              <div className="card-header">
+                <HistoryIcon
+                  fontSize="small"
+                  sx={{ verticalAlign: "middle", mr: 1 }}
+                />
+                Hoạt động gần đây
+              </div>
               <div className="card-body" style={{ padding: 0 }}>
                 <div style={{ overflowX: "auto" }}>
                   <table className="history-table">
@@ -508,32 +578,7 @@ const ProfilePage: React.FC = () => {
                         )
                         .slice(0, 5)
                         .map((b) => {
-                          const statusMap: Record<
-                            string,
-                            { cls: string; label: string; icon: string }
-                          > = {
-                            pending: {
-                              cls: "pending",
-                              label: "Chờ xác nhận",
-                              icon: "⏳",
-                            },
-                            confirmed: {
-                              cls: "confirmed",
-                              label: "Đã xác nhận",
-                              icon: "✅",
-                            },
-                            cancelled: {
-                              cls: "cancelled",
-                              label: "Đã huỷ",
-                              icon: "❌",
-                            },
-                            completed: {
-                              cls: "completed",
-                              label: "Hoàn thành",
-                              icon: "🏅",
-                            },
-                          };
-                          const s = statusMap[b.status];
+                          const s = STATUS_MAP[b.status];
                           return (
                             <tr key={b._id}>
                               <td style={{ fontWeight: 700 }}>{b.courtName}</td>
@@ -546,7 +591,11 @@ const ProfilePage: React.FC = () => {
                               </td>
                               <td>
                                 <span className={`status-badge ${s.cls}`}>
-                                  {s.icon} {s.label}
+                                  <s.icon
+                                    fontSize="small"
+                                    sx={{ verticalAlign: "middle", mr: 0.5 }}
+                                  />
+                                  {s.label}
                                 </span>
                               </td>
                             </tr>

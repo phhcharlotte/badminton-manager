@@ -17,11 +17,18 @@ import {
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
-import { useCourtStore } from "../store/courtStore";
+import StadiumIcon from "@mui/icons-material/Stadium";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import PauseCircleIcon from "@mui/icons-material/PauseCircle";
+import StarIcon from "@mui/icons-material/Star";
+import BoltIcon from "@mui/icons-material/Bolt";
+import WarningAmberIcon from "@mui/icons-material/WarningAmber";
+import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
+import { useCourtStore } from "@/store/courtStore";
 import { Court, CourtType } from "@/types/Courts/index";
-import { formatCurrency } from "../utils/helpers";
-import NotificationSnackbar from "../components/shared/NotificationSnackbar";
-import { useNotification } from "../hooks/useNotification";
+import { formatCurrency } from "@/utils/helpers";
+import NotificationSnackbar from "@/components/shared/NotificationSnackbar";
+import { useNotification } from "@/hooks/useNotification";
 
 interface CourtForm {
   name: string;
@@ -67,7 +74,6 @@ const ManageCourtsPage: React.FC = () => {
   const [deleting, setDeleting] = useState(false);
   const [formError, setFormError] = useState("");
 
-  // Admin xem duoc tat ca san (ca dang an), khong truyen filter isActive
   useEffect(() => {
     fetchCourts().catch(() => notify("Không tải được danh sách sân!", "error"));
   }, []); // eslint-disable-line
@@ -100,11 +106,9 @@ const ManageCourtsPage: React.FC = () => {
     }
     setSaving(true);
     setFormError("");
-
     const result = editingCourt
       ? await editCourt(editingCourt._id, form)
       : await addCourt(form);
-
     setSaving(false);
     if (result.success) {
       notify(result.message, "success");
@@ -156,7 +160,10 @@ const ManageCourtsPage: React.FC = () => {
           justifyContent: "space-between",
         }}>
         <div>
-          <div className="page-title">🏟️ Quản lý sân</div>
+          <div className="page-title">
+            <StadiumIcon sx={{ verticalAlign: "middle", mr: 1 }} />
+            Quản lý sân
+          </div>
           <div className="page-subtitle">
             Thêm, sửa, xoá và điều chỉnh giá sân
           </div>
@@ -179,35 +186,39 @@ const ManageCourtsPage: React.FC = () => {
           {
             label: "Tổng sân",
             value: courts.length,
-            icon: "🏟️",
+            Icon: StadiumIcon,
             bg: "#e8f5e9",
             ibg: "#c8e6c9",
+            color: "#1a472a",
           },
           {
             label: "Đang hoạt động",
             value: courts.filter((c) => c.isActive).length,
-            icon: "✅",
+            Icon: CheckCircleIcon,
             bg: "#d1fae5",
             ibg: "#a7f3d0",
+            color: "#065f46",
           },
           {
             label: "Tạm ngưng",
             value: courts.filter((c) => !c.isActive).length,
-            icon: "⏸️",
+            Icon: PauseCircleIcon,
             bg: "#fee2e2",
             ibg: "#fecaca",
+            color: "#dc2626",
           },
           {
             label: "Sân cố định",
             value: courts.filter((c) => c.type === "fixed").length,
-            icon: "⭐",
+            Icon: StarIcon,
             bg: "#fef3c7",
             ibg: "#fde68a",
+            color: "#b45309",
           },
         ].map((s) => (
           <div className="stat-card" key={s.label} style={{ background: s.bg }}>
             <div className="stat-icon" style={{ background: s.ibg }}>
-              {s.icon}
+              <s.Icon sx={{ color: s.color }} />
             </div>
             <div className="stat-content">
               <div className="stat-value">{s.value}</div>
@@ -275,9 +286,18 @@ const ManageCourtsPage: React.FC = () => {
                       <td>
                         <span
                           className={`status-badge ${court.type === "fixed" ? "confirmed" : "pending"}`}>
-                          {court.type === "fixed"
-                            ? "⭐ Cố định"
-                            : "🎯 Vãng lai"}
+                          {court.type === "fixed" ? (
+                            <StarIcon
+                              fontSize="small"
+                              sx={{ verticalAlign: "middle", mr: 0.5 }}
+                            />
+                          ) : (
+                            <BoltIcon
+                              fontSize="small"
+                              sx={{ verticalAlign: "middle", mr: 0.5 }}
+                            />
+                          )}
+                          {court.type === "fixed" ? "Cố định" : "Vãng lai"}
                         </span>
                       </td>
                       <td>
@@ -308,8 +328,25 @@ const ManageCourtsPage: React.FC = () => {
                             />
                           }
                           label={
-                            <span style={{ fontSize: 13 }}>
-                              {court.isActive ? "✅ Hoạt động" : "⏸️ Tạm ngưng"}
+                            <span
+                              style={{
+                                fontSize: 13,
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: 4,
+                              }}>
+                              {court.isActive ? (
+                                <CheckCircleIcon
+                                  fontSize="small"
+                                  color="success"
+                                />
+                              ) : (
+                                <PauseCircleIcon
+                                  fontSize="small"
+                                  color="disabled"
+                                />
+                              )}
+                              {court.isActive ? "Hoạt động" : "Tạm ngưng"}
                             </span>
                           }
                         />
@@ -355,14 +392,20 @@ const ManageCourtsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Add/Edit */}
       <Dialog
         open={dialogOpen}
         onClose={() => !saving && setDialogOpen(false)}
         maxWidth="sm"
         fullWidth>
-        <DialogTitle sx={{ fontWeight: 800 }}>
-          {editingCourt ? "✏️ Chỉnh sửa sân" : "➕ Thêm sân mới"}
+        <DialogTitle
+          sx={{
+            fontWeight: 800,
+            display: "flex",
+            alignItems: "center",
+            gap: 1,
+          }}>
+          {editingCourt ? <EditIcon /> : <AddIcon />}
+          {editingCourt ? "Chỉnh sửa sân" : "Thêm sân mới"}
         </DialogTitle>
         <DialogContent sx={{ pt: 2 }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
@@ -395,8 +438,20 @@ const ManageCourtsPage: React.FC = () => {
                 }
                 size="small"
                 sx={{ flex: 1 }}>
-                <MenuItem value="fixed">⭐ Cố định</MenuItem>
-                <MenuItem value="casual">🎯 Vãng lai</MenuItem>
+                <MenuItem value="fixed">
+                  <StarIcon
+                    fontSize="small"
+                    sx={{ verticalAlign: "middle", mr: 1 }}
+                  />
+                  Cố định
+                </MenuItem>
+                <MenuItem value="casual">
+                  <BoltIcon
+                    fontSize="small"
+                    sx={{ verticalAlign: "middle", mr: 1 }}
+                  />
+                  Vãng lai
+                </MenuItem>
               </TextField>
               <TextField
                 select
@@ -465,14 +520,19 @@ const ManageCourtsPage: React.FC = () => {
         </DialogActions>
       </Dialog>
 
-      {/* Price */}
       <Dialog
         open={priceDialog}
         onClose={() => !priceSaving && setPriceDialog(false)}
         maxWidth="xs"
         fullWidth>
-        <DialogTitle sx={{ fontWeight: 800 }}>
-          💰 Điều chỉnh giá sân
+        <DialogTitle
+          sx={{
+            fontWeight: 800,
+            display: "flex",
+            alignItems: "center",
+            gap: 1,
+          }}>
+          <AttachMoneyIcon /> Điều chỉnh giá sân
         </DialogTitle>
         <DialogContent>
           <TextField
@@ -507,14 +567,20 @@ const ManageCourtsPage: React.FC = () => {
         </DialogActions>
       </Dialog>
 
-      {/* Delete */}
       <Dialog
         open={!!deleteId}
         onClose={() => setDeleteId(null)}
         maxWidth="xs"
         fullWidth>
-        <DialogTitle sx={{ fontWeight: 800, color: "#dc2626" }}>
-          ⚠️ Xoá sân
+        <DialogTitle
+          sx={{
+            fontWeight: 800,
+            color: "#dc2626",
+            display: "flex",
+            alignItems: "center",
+            gap: 1,
+          }}>
+          <WarningAmberIcon /> Xoá sân
         </DialogTitle>
         <DialogContent>
           <Alert severity="error">

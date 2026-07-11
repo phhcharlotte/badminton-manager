@@ -20,10 +20,17 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
 import SearchIcon from "@mui/icons-material/Search";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
-import { useAuthStore } from "../store/authStore";
-import { User, UserRole } from "../types";
-import NotificationSnackbar from "../components/shared/NotificationSnackbar";
-import { useNotification } from "../hooks/useNotification";
+import GroupsIcon from "@mui/icons-material/Groups";
+import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
+import ManageAccountsIcon from "@mui/icons-material/ManageAccounts";
+import PersonIcon from "@mui/icons-material/Person";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import BlockIcon from "@mui/icons-material/Block";
+import WarningAmberIcon from "@mui/icons-material/WarningAmber";
+import { useAuthStore } from "@/store/authStore";
+import { User, UserRole } from "@/types";
+import NotificationSnackbar from "@/components/shared/NotificationSnackbar";
+import { useNotification } from "@/hooks/useNotification";
 
 interface ManagerForm {
   fullName: string;
@@ -40,11 +47,15 @@ const DEFAULT_FORM: ManagerForm = {
 
 const ROLE_CONFIG: Record<
   UserRole,
-  { label: string; color: "error" | "warning" | "info" }
+  {
+    label: string;
+    color: "error" | "warning" | "info";
+    icon: React.ElementType;
+  }
 > = {
-  admin: { label: "Admin", color: "error" },
-  manager: { label: "Quản lý", color: "warning" },
-  customer: { label: "Khách hàng", color: "info" },
+  admin: { label: "Admin", color: "error", icon: AdminPanelSettingsIcon },
+  manager: { label: "Quản lý", color: "warning", icon: ManageAccountsIcon },
+  customer: { label: "Khách hàng", color: "info", icon: PersonIcon },
 };
 
 const AVATAR_COLORS: Record<UserRole, { bg: string; color: string }> = {
@@ -74,7 +85,6 @@ const ManageUsersPage: React.FC = () => {
   const [formError, setFormError] = useState("");
   const [saving, setSaving] = useState(false);
 
-  // Goi API GET /api/admin/users moi khi doi bo loc role (loc server-side cho nhanh)
   useEffect(() => {
     setLoading(true);
     fetchUsers(roleFilter === "all" ? undefined : roleFilter)
@@ -157,7 +167,10 @@ const ManageUsersPage: React.FC = () => {
           justifyContent: "space-between",
         }}>
         <div>
-          <div className="page-title">👥 Quản lý người dùng</div>
+          <div className="page-title">
+            <GroupsIcon sx={{ verticalAlign: "middle", mr: 1 }} />
+            Quản lý người dùng
+          </div>
           <div className="page-subtitle">
             Xem danh sách quản lý, khách hàng và tạo tài khoản quản lý mới
           </div>
@@ -180,35 +193,39 @@ const ManageUsersPage: React.FC = () => {
           {
             label: "Tổng TK",
             value: users.length,
-            icon: "👥",
+            Icon: GroupsIcon,
             bg: "#e8f5e9",
             ibg: "#c8e6c9",
+            color: "#1a472a",
           },
           {
             label: "Admin",
             value: countByRole("admin"),
-            icon: "👑",
+            Icon: AdminPanelSettingsIcon,
             bg: "#fee2e2",
             ibg: "#fecaca",
+            color: "#dc2626",
           },
           {
             label: "Quản lý",
             value: countByRole("manager"),
-            icon: "🧑‍💼",
+            Icon: ManageAccountsIcon,
             bg: "#fef3c7",
             ibg: "#fde68a",
+            color: "#b45309",
           },
           {
             label: "Khách hàng",
             value: countByRole("customer"),
-            icon: "🙋",
+            Icon: PersonIcon,
             bg: "#dbeafe",
             ibg: "#bfdbfe",
+            color: "#1e40af",
           },
         ].map((s) => (
           <div className="stat-card" key={s.label} style={{ background: s.bg }}>
             <div className="stat-icon" style={{ background: s.ibg }}>
-              {s.icon}
+              <s.Icon sx={{ color: s.color }} />
             </div>
             <div className="stat-content">
               <div className="stat-value">{s.value}</div>
@@ -241,9 +258,27 @@ const ManageUsersPage: React.FC = () => {
           onChange={(e) => setRoleFilter(e.target.value as UserRole | "all")}
           sx={{ minWidth: 160 }}>
           <MenuItem value="all">Tất cả</MenuItem>
-          <MenuItem value="admin">👑 Admin</MenuItem>
-          <MenuItem value="manager">🧑‍💼 Quản lý</MenuItem>
-          <MenuItem value="customer">🙋 Khách hàng</MenuItem>
+          <MenuItem value="admin">
+            <AdminPanelSettingsIcon
+              fontSize="small"
+              sx={{ verticalAlign: "middle", mr: 1 }}
+            />
+            Admin
+          </MenuItem>
+          <MenuItem value="manager">
+            <ManageAccountsIcon
+              fontSize="small"
+              sx={{ verticalAlign: "middle", mr: 1 }}
+            />
+            Quản lý
+          </MenuItem>
+          <MenuItem value="customer">
+            <PersonIcon
+              fontSize="small"
+              sx={{ verticalAlign: "middle", mr: 1 }}
+            />
+            Khách hàng
+          </MenuItem>
         </TextField>
         <div style={{ flex: 1 }} />
         <span style={{ fontSize: 13, color: "#718096" }}>
@@ -329,6 +364,7 @@ const ManageUsersPage: React.FC = () => {
                         </td>
                         <td>
                           <Chip
+                            icon={<roleConf.icon fontSize="small" />}
                             label={roleConf.label}
                             color={roleConf.color}
                             size="small"
@@ -351,8 +387,25 @@ const ManageUsersPage: React.FC = () => {
                               />
                             }
                             label={
-                              <span style={{ fontSize: 12 }}>
-                                {user.isActive ? "✅ Hoạt động" : "🚫 Khoá"}
+                              <span
+                                style={{
+                                  fontSize: 12,
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: 4,
+                                }}>
+                                {user.isActive ? (
+                                  <CheckCircleIcon
+                                    fontSize="small"
+                                    color="success"
+                                  />
+                                ) : (
+                                  <BlockIcon
+                                    fontSize="small"
+                                    color="disabled"
+                                  />
+                                )}
+                                {user.isActive ? "Hoạt động" : "Khoá"}
                               </span>
                             }
                           />
@@ -393,14 +446,19 @@ const ManageUsersPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Dialog tao tai khoan Quan ly - CHI tao duoc role manager, khong the doi vai tro khac */}
       <Dialog
         open={dialogOpen}
         onClose={() => !saving && setDialogOpen(false)}
         maxWidth="sm"
         fullWidth>
-        <DialogTitle sx={{ fontWeight: 800 }}>
-          🧑‍💼 Tạo tài khoản Quản lý
+        <DialogTitle
+          sx={{
+            fontWeight: 800,
+            display: "flex",
+            alignItems: "center",
+            gap: 1,
+          }}>
+          <ManageAccountsIcon /> Tạo tài khoản Quản lý
         </DialogTitle>
         <DialogContent sx={{ pt: 2 }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
@@ -482,14 +540,20 @@ const ManageUsersPage: React.FC = () => {
         </DialogActions>
       </Dialog>
 
-      {/* Xac nhan xoa */}
       <Dialog
         open={!!deleteId}
         onClose={() => setDeleteId(null)}
         maxWidth="xs"
         fullWidth>
-        <DialogTitle sx={{ fontWeight: 800, color: "#dc2626" }}>
-          ⚠️ Xoá tài khoản
+        <DialogTitle
+          sx={{
+            fontWeight: 800,
+            color: "#dc2626",
+            display: "flex",
+            alignItems: "center",
+            gap: 1,
+          }}>
+          <WarningAmberIcon /> Xoá tài khoản
         </DialogTitle>
         <DialogContent>
           <Alert severity="error">

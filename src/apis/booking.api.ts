@@ -16,6 +16,20 @@ export interface CreateBookingPayload {
   notes?: string;
 }
 
+export interface FixedDurationOption {
+  months: 1 | 2 | 3 | 6 | 12;
+  label: string;
+  discountPercent: number;
+}
+
+export interface CreateFixedBookingPayload {
+  courtId: string;
+  startDate: string;
+  slots: string[];
+  durationMonths: 1 | 2 | 3 | 6 | 12;
+  notes?: string;
+}
+
 export const createBookingApi = async (payload: CreateBookingPayload) => {
   const { data } = await apiClient.post("/bookings", payload);
   return data.data.booking as Booking;
@@ -49,5 +63,17 @@ export const updateBookingStatusApi = async (
     status,
     cancelReason,
   });
+  return data.data.booking as Booking;
+};
+
+export const getFixedDurationsApi = async () => {
+  const { data } = await apiClient.get("/bookings/fixed-durations");
+  return data.data.options as FixedDurationOption[];
+};
+
+export const createFixedBookingApi = async (
+  payload: CreateFixedBookingPayload,
+) => {
+  const { data } = await apiClient.post("/bookings/fixed", payload);
   return data.data.booking as Booking;
 };

@@ -1,7 +1,7 @@
 // src/components/auth/ProtectedRoute.tsx
-import React from 'react';
-import { useAuthStore } from '../../store/authStore';
-import { UserRole } from '../../types';
+import React from "react";
+import { useAuthStore } from "@/store/authStore";
+import { UserRole } from "@/types";
 
 interface Props {
   allowedRoles: UserRole[];
@@ -26,29 +26,27 @@ const ProtectedRoute: React.FC<Props> = ({
         {fallback || (
           <div
             style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
               minHeight: 400,
-              color: '#718096',
-            }}
-          >
+              color: "#718096",
+            }}>
             <div style={{ fontSize: 64, marginBottom: 16 }}>🚫</div>
 
             <div
               style={{
                 fontSize: 22,
                 fontWeight: 800,
-                color: '#1b1b2f',
+                color: "#1b1b2f",
                 marginBottom: 8,
-              }}
-            >
+              }}>
               Không có quyền truy cập
             </div>
 
             <div style={{ fontSize: 14 }}>
-              Trang này chỉ dành cho: {allowedRoles.join(', ')}
+              Trang này chỉ dành cho: {allowedRoles.join(", ")}
             </div>
           </div>
         )}

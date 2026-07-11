@@ -1,76 +1,129 @@
-// src/store/bookingStore.ts
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import { Booking, BookingStatus } from '../types';
-import { INITIAL_BOOKINGS } from '../data/mockData';
+import { create } from "zustand";
+import {
+  createBookingApi,
+  listMyBookingsApi,
+  cancelMyBookingApi,
+  listAllBookingsApi,
+  updateBookingStatusApi,
+  CreateBookingPayload,
+} from "@/apis/booking.api";
+import { Booking, BookingStatus } from "@/types/Booking";
 
 interface BookingStore {
-  bookings: Booking[];
-  addBooking: (booking: Omit<Booking, 'id' | 'createdAt'>) => Booking;
-  updateBookingStatus: (id: string, status: BookingStatus) => void;
+  myBookings: Booking[];
+  allBookings: Booking[];
+  isLoading: boolean;
+
+  fetchMyBookings: () => Promise<void>;
+  createBooking: (
+    payload: CreateBookingPayload,
+  ) => Promise<{ success: boolean; message: string; conflict?: boolean }>;
+  cancelBooking: (id: string) => Promise<{ success: boolean; message: string }>;
+
+  fetchAllBookings: (params?: {
+    status?: BookingStatus;
+    date?: string;
+    courtId?: string;
+  }) => Promise<void>;
+  updateBookingStatus: (
+    id: string,
+    status: "confirmed" | "cancelled" | "completed",
+    cancelReason?: string,
+  ) => Promise<{ success: boolean; message: string }>;
+
+  // Goi tu socket event, CHI cap nhat state local, khong goi API
+  upsertBookingRealtime: (booking: Booking) => void;
+
   getBookingsByUser: (userId: string) => Booking[];
-  getBookingsByCourt: (courtId: string, date: string) => Booking[];
-  getBookedTimeSlots: (courtId: string, date: string) => string[];
   getAllBookings: () => Booking[];
-  cancelBooking: (id: string) => void;
 }
 
-export const useBookingStore = create<BookingStore>()(
-  persist(
-    (set, get) => ({
-      bookings: INITIAL_BOOKINGS,
+export const useBookingStore = create<BookingStore>((set, get) => ({
+  myBookings: [],
+  allBookings: [],
+  isLoading: false,
 
-      addBooking: (bookingData) => {
-        const newBooking: Booking = {
-          ...bookingData,
-          id: `b${Date.now()}`,
-          createdAt: new Date().toISOString(),
-        };
-        set((state) => ({ bookings: [...state.bookings, newBooking] }));
-        return newBooking;
-      },
+  fetchMyBookings: async () => {
+    set({ isLoading: true });
+    try {
+      const myBookings = await listMyBookingsApi();
+      set({ myBookings, isLoading: false });
+    } catch {
+      set({ isLoading: false });
+    }
+  },
 
-      updateBookingStatus: (id, status) => {
-        set((state) => ({
-          bookings: state.bookings.map((b) => (b.id === id ? { ...b, status } : b)),
-        }));
-      },
+  createBooking: async (payload) => {
+    try {
+      const booking = await createBookingApi(payload);
+      set({ myBookings: [booking, ...get().myBookings] });
+      return {
+        success: true,
+        message: "Đặt sân thành công! Nhân viên sẽ xác nhận trong 30 phút.",
+      };
+    } catch (err: any) {
+      const errorCode = err?.response?.data?.errorCode;
+      // SLOT_ALREADY_BOOKED: nguoi khac vua dat truoc trong luc minh dang thao tac
+      return {
+        success: false,
+        message: err?.response?.data?.message || "Đặt sân thất bại!",
+        conflict: errorCode === "SLOT_ALREADY_BOOKED",
+      };
+    }
+  },
 
-      getBookingsByUser: (userId) => {
-        return get().bookings.filter((b) => b.userId === userId);
-      },
+  cancelBooking: async (id) => {
+    try {
+      const updated = await cancelMyBookingApi(id);
+      set({
+        myBookings: get().myBookings.map((b) => (b._id === id ? updated : b)),
+      });
+      return { success: true, message: "Đã huỷ đơn đặt sân." };
+    } catch (err: any) {
+      return {
+        success: false,
+        message: err?.response?.data?.message || "Huỷ đơn thất bại!",
+      };
+    }
+  },
 
-      getBookingsByCourt: (courtId, date) => {
-        return get().bookings.filter(
-          (b) => b.courtId === courtId && b.date === date && b.status !== 'cancelled'
-        );
-      },
+  fetchAllBookings: async (params) => {
+    set({ isLoading: true });
+    try {
+      const allBookings = await listAllBookingsApi(params);
+      set({ allBookings, isLoading: false });
+    } catch {
+      set({ isLoading: false });
+    }
+  },
 
-      getBookedTimeSlots: (courtId, date) => {
-        const bookings = get().bookings.filter(
-          (b) => b.courtId === courtId && b.date === date && b.status !== 'cancelled'
-        );
-        const slots: string[] = [];
-        bookings.forEach((b) => {
-          const startHour = parseInt(b.startTime.split(':')[0]);
-          const endHour = parseInt(b.endTime.split(':')[0]);
-          for (let h = startHour; h < endHour; h++) {
-            slots.push(`${String(h).padStart(2, '0')}:00`);
-          }
-        });
-        return slots;
-      },
+  updateBookingStatus: async (id, status, cancelReason) => {
+    try {
+      const updated = await updateBookingStatusApi(id, status, cancelReason);
+      set({
+        allBookings: get().allBookings.map((b) => (b._id === id ? updated : b)),
+      });
+      return { success: true, message: "Cập nhật trạng thái thành công!" };
+    } catch (err: any) {
+      return {
+        success: false,
+        message: err?.response?.data?.message || "Cập nhật thất bại!",
+      };
+    }
+  },
 
-      getAllBookings: () => get().bookings,
+  upsertBookingRealtime: (booking) => {
+    set((state) => ({
+      myBookings: state.myBookings.some((b) => b._id === booking._id)
+        ? state.myBookings.map((b) => (b._id === booking._id ? booking : b))
+        : state.myBookings, // chi cap nhat neu da co san trong danh sach cua chinh minh (khong tu them moi vao HistoryPage nguoi khac)
+      allBookings: state.allBookings.some((b) => b._id === booking._id)
+        ? state.allBookings.map((b) => (b._id === booking._id ? booking : b))
+        : [booking, ...state.allBookings], // staff thay don MOI xuat hien ngay dau danh sach
+    }));
+  },
 
-      cancelBooking: (id) => {
-        set((state) => ({
-          bookings: state.bookings.map((b) =>
-            b.id === id ? { ...b, status: 'cancelled' as BookingStatus } : b
-          ),
-        }));
-      },
-    }),
-    { name: 'booking-store' }
-  )
-);
+  getBookingsByUser: (userId) =>
+    get().myBookings.filter((b) => b.user === userId),
+  getAllBookings: () => get().allBookings,
+}));

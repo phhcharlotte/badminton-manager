@@ -1,6 +1,5 @@
-// src/store/authStore.ts
 import { create } from "zustand";
-import { User } from "../types";
+import { User } from "@/types";
 import { setAccessToken } from "@/apis/tokenStore";
 import {
   loginApi,
@@ -14,6 +13,7 @@ import {
   changePasswordApi,
   deleteUserApi,
 } from "@/apis/auth.api";
+import { connectSocket, disconnectSocket } from "@/lib/socket";
 
 interface AuthStore {
   currentUser: User | null;
@@ -64,6 +64,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       const { user, accessToken } = await refreshApi();
       setAccessToken(accessToken);
       set({ currentUser: user, isAuthenticated: true });
+      connectSocket();
     } catch {
       setAccessToken(null);
       set({ currentUser: null, isAuthenticated: false });
@@ -77,6 +78,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       const { user, accessToken } = await loginApi(email, password);
       setAccessToken(accessToken);
       set({ currentUser: user, isAuthenticated: true });
+      connectSocket();
       return { success: true, message: "Đăng nhập thành công!" };
     } catch (err: any) {
       return {
@@ -93,6 +95,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       const { user, accessToken } = await registerApi(payload);
       setAccessToken(accessToken);
       set({ currentUser: user, isAuthenticated: true });
+      connectSocket();
       return { success: true, message: "Đăng ký thành công!" };
     } catch (err: any) {
       return {
@@ -108,6 +111,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     } finally {
       setAccessToken(null);
       set({ currentUser: null, isAuthenticated: false });
+      disconnectSocket();
     }
   },
 

@@ -65,3 +65,15 @@ export const updateProfileApi = async (payload: {
   const { data } = await apiClient.patch("/auth/me", payload);
   return data.data.user as User;
 };
+
+// src/api/auth.api.ts
+export const changePasswordApi = async (
+  currentPassword: string,
+  newPassword: string,
+) => {
+  const { data } = await apiClient.patch("/auth/change-password", {
+    currentPassword,
+    newPassword,
+  });
+  return data;
+};

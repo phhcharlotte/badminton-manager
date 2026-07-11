@@ -535,7 +535,7 @@ const ProfilePage: React.FC = () => {
                           };
                           const s = statusMap[b.status];
                           return (
-                            <tr key={b.id}>
+                            <tr key={b._id}>
                               <td style={{ fontWeight: 700 }}>{b.courtName}</td>
                               <td>{formatDate(b.date)}</td>
                               <td style={{ fontSize: 13 }}>

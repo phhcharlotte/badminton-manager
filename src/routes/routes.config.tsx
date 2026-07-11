@@ -1,15 +1,15 @@
 // src/routes/routes.config.tsx
 import React from "react";
-import { UserRole } from "../types";
+import { UserRole } from "@/types";
 
-import DashboardPage from "../pages/DashboardPage";
-import CourtsPage from "../pages/CourtsPage";
-import BookingPage from "../pages/BookingPage";
-import HistoryPage from "../pages/HistoryPage";
-import ManageBookingsPage from "../pages/ManageBookingsPage";
-import ManageCourtsPage from "../pages/ManageCourtsPage";
-import ManageUsersPage from "../pages/ManageUsersPage";
-import ProfilePage from "../pages/ProfilePage";
+import DashboardPage from "@/pages/DashboardPage";
+import CourtsPage from "@/pages/CourtsPage";
+import BookingPage from "@/pages/BookingPage";
+import HistoryPage from "@/pages/HistoryPage";
+import ManageBookingsPage from "@/pages/ManageBookingsPage";
+import ManageCourtsPage from "@/pages/ManageCourtsPage";
+import ManageUsersPage from "@/pages/ManageUsersPage";
+import ProfilePage from "@/pages/ProfilePage";
 
 export type PageKey =
   | "dashboard"
@@ -71,9 +71,9 @@ export const NAV_ITEMS: NavItem[] = [
 ];
 
 export const ROLE_LABELS: Record<UserRole, string> = {
-  admin: "👑 Admin",
-  manager: "🧑‍💼 Quản lý",
-  customer: "🙋 Khách hàng",
+  admin: " Admin",
+  manager: " Quản lý",
+  customer: " Khách hàng",
 };
 
 export const ROLE_COLORS: Record<UserRole, string> = {

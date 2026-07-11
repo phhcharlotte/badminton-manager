@@ -1,4 +1,3 @@
-// src/store/courtStore.ts
 import { create } from "zustand";
 import { Court, CourtType } from "@/types/Courts/index";
 import {

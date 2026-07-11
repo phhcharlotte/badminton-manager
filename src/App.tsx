@@ -19,6 +19,7 @@ import {
 } from "./routes/routes.config";
 
 import "./styles/main.scss";
+import { useBookingSocketEvents } from "./hooks/useBookingSocketEvents";
 
 // ── MUI Theme ─────────────────────────────────────────────────────────
 const theme = createTheme({
@@ -124,6 +125,8 @@ const App: React.FC = () => {
   useEffect(() => {
     initAuth();
   }, [initAuth]);
+
+  useBookingSocketEvents(isAuthenticated);
 
   // Default page on login
   useEffect(() => {

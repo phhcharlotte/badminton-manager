@@ -1,6 +1,11 @@
-// src/api/booking.api.ts
 import { apiClient } from "./axiosClient";
-import { Booking, BookingStatus } from "@/types/Booking";
+import {
+  Booking,
+  BookingStatus,
+  CreateBookingPayload,
+  CreateFixedBookingPayload,
+  FixedDurationOption,
+} from "@/types/Booking";
 
 export const getAvailabilityApi = async (courtId: string, date: string) => {
   const { data } = await apiClient.get("/bookings/availability", {
@@ -8,27 +13,6 @@ export const getAvailabilityApi = async (courtId: string, date: string) => {
   });
   return data.data.bookedSlots as string[];
 };
-
-export interface CreateBookingPayload {
-  courtId: string;
-  date: string;
-  slots: string[];
-  notes?: string;
-}
-
-export interface FixedDurationOption {
-  months: 1 | 2 | 3 | 6 | 12;
-  label: string;
-  discountPercent: number;
-}
-
-export interface CreateFixedBookingPayload {
-  courtId: string;
-  startDate: string;
-  slots: string[];
-  durationMonths: 1 | 2 | 3 | 6 | 12;
-  notes?: string;
-}
 
 export const createBookingApi = async (payload: CreateBookingPayload) => {
   const { data } = await apiClient.post("/bookings", payload);

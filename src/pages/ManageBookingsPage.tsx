@@ -1,4 +1,3 @@
-// src/pages/ManageBookingsPage.tsx
 import React, { useEffect, useState } from "react";
 import {
   Button,
@@ -62,7 +61,7 @@ const ManageBookingsPage: React.FC = () => {
     fetchAllBookings().catch(() =>
       notify("Không tải được danh sách đặt sân!", "error"),
     );
-  }, []); // eslint-disable-line
+  }, []);
 
   const filtered = allBookings.filter((b) => {
     const keyword = search.toLowerCase();
@@ -193,12 +192,14 @@ const ManageBookingsPage: React.FC = () => {
           placeholder="Tìm theo tên, sân, mã..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon fontSize="small" />
-              </InputAdornment>
-            ),
+          slotProps={{
+            input: {
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon fontSize="small" />
+                </InputAdornment>
+              ),
+            },
           }}
           sx={{ minWidth: 240 }}
         />

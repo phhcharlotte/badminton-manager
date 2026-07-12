@@ -1,4 +1,3 @@
-// src/api/tokenStore.ts
 // Access token CHI luu trong bo nho (bien JS), KHONG luu localStorage.
 let accessToken: string | null = null;
 

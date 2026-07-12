@@ -1,4 +1,3 @@
-// src/components/shared/Sidebar.tsx
 import React from "react";
 
 import { useAuthStore } from "@/store/authStore";

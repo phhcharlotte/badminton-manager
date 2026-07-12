@@ -1,39 +1,42 @@
 // src/utils/helpers.ts
-import dayjs from 'dayjs';
+import { GroupBy } from "@/types/Revenue";
+import dayjs from "dayjs";
 
 export const formatCurrency = (amount: number): string =>
-  amount.toLocaleString('vi-VN') + 'đ';
+  amount.toLocaleString("vi-VN") + "đ";
 
 export const formatDate = (dateStr: string): string =>
-  dayjs(dateStr).format('DD/MM/YYYY');
+  dayjs(dateStr).format("DD/MM/YYYY");
 
 export const formatDateTime = (isoStr: string): string =>
-  dayjs(isoStr).format('HH:mm DD/MM/YYYY');
+  dayjs(isoStr).format("HH:mm DD/MM/YYYY");
 
-export const generateId = (prefix = 'id'): string =>
+export const generateId = (prefix = "id"): string =>
   `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
 
 export const getInitials = (name: string): string =>
   name
-    .split(' ')
+    .split(" ")
     .map((n) => n[0])
-    .join('')
+    .join("")
     .toUpperCase()
     .slice(0, 2);
 
 export const isSlotPast = (dateStr: string, timeStr: string): boolean => {
   const now = dayjs();
-  const slotTime = dayjs(`${dateStr} ${timeStr}`, 'YYYY-MM-DD HH:mm');
+  const slotTime = dayjs(`${dateStr} ${timeStr}`, "YYYY-MM-DD HH:mm");
   return slotTime.isBefore(now);
 };
 
-export const buildTimeRange = (slots: string[]): { start: string; end: string; hours: number } => {
-  if (!slots.length) return { start: '', end: '', hours: 0 };
+export const buildTimeRange = (
+  slots: string[],
+): { start: string; end: string; hours: number } => {
+  if (!slots.length) return { start: "", end: "", hours: 0 };
   const sorted = [...slots].sort();
-  const lastHour = parseInt(sorted[sorted.length - 1].split(':')[0]) + 1;
+  const lastHour = parseInt(sorted[sorted.length - 1].split(":")[0]) + 1;
   return {
     start: sorted[0],
-    end: `${String(lastHour).padStart(2, '0')}:00`,
+    end: `${String(lastHour).padStart(2, "0")}:00`,
     hours: sorted.length,
   };
 };
@@ -42,9 +45,50 @@ export const areConsecutive = (slots: string[]): boolean => {
   if (slots.length <= 1) return true;
   const sorted = [...slots].sort();
   for (let i = 1; i < sorted.length; i++) {
-    const prev = parseInt(sorted[i - 1].split(':')[0]);
-    const curr = parseInt(sorted[i].split(':')[0]);
+    const prev = parseInt(sorted[i - 1].split(":")[0]);
+    const curr = parseInt(sorted[i].split(":")[0]);
     if (curr - prev !== 1) return false;
   }
   return true;
+};
+
+export const formatPeriodLabel = (period: string, groupBy: GroupBy): string => {
+  switch (groupBy) {
+    case "day":
+      return dayjs(period).format("DD/MM/YYYY");
+
+    case "month":
+      return dayjs(`${period}-01`).format("MM/YYYY");
+
+    case "week": {
+      const [year, week] = period.split("-W");
+      return `Tuần ${week}/${year}`;
+    }
+
+    case "quarter": {
+      const [year, quarter] = period.split("-");
+      return `${quarter}/${year}`;
+    }
+
+    case "year":
+      return period;
+
+    default:
+      return period;
+  }
+};
+
+export const buildFixedOccurrencesPreview = (
+  startDate: string,
+  months: number,
+): string[] => {
+  const start = dayjs(startDate);
+  const end = start.add(months, "month");
+  const dates: string[] = [];
+  let current = start;
+  while (current.isBefore(end)) {
+    dates.push(current.format("YYYY-MM-DD"));
+    current = current.add(7, "day");
+  }
+  return dates;
 };

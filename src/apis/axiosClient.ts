@@ -1,4 +1,3 @@
-// src/api/axiosClient.ts
 import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
 import { getAccessToken, setAccessToken } from "./tokenStore";
 

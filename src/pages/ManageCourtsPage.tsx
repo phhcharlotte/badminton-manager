@@ -1,4 +1,3 @@
-// src/pages/ManageCourtsPage.tsx
 import React, { useEffect, useState } from "react";
 import {
   Button,
@@ -76,7 +75,7 @@ const ManageCourtsPage: React.FC = () => {
 
   useEffect(() => {
     fetchCourts().catch(() => notify("Không tải được danh sách sân!", "error"));
-  }, []); // eslint-disable-line
+  }, []);
 
   const openAdd = () => {
     setEditingCourt(null);
@@ -478,7 +477,12 @@ const ManageCourtsPage: React.FC = () => {
               }
               size="small"
               fullWidth
-              inputProps={{ min: 0, step: 10000 }}
+              slotProps={{
+                htmlInput: {
+                  min: 0,
+                  step: 10000,
+                },
+              }}
             />
             <FormControlLabel
               control={
@@ -543,7 +547,12 @@ const ManageCourtsPage: React.FC = () => {
             onChange={(e) => setNewPrice(Number(e.target.value))}
             size="small"
             sx={{ mt: 1 }}
-            inputProps={{ min: 0, step: 10000 }}
+            slotProps={{
+              htmlInput: {
+                min: 0,
+                step: 10000,
+              },
+            }}
           />
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 3 }}>

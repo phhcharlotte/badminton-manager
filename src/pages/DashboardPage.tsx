@@ -1,4 +1,3 @@
-// src/pages/DashboardPage.tsx
 import React, { useEffect } from "react";
 import { CircularProgress, IconButton, Tooltip } from "@mui/material";
 import DashboardIcon from "@mui/icons-material/Dashboard";
@@ -72,7 +71,7 @@ const DashboardPage: React.FC = () => {
     if (isAdmin) {
       fetchUsers("customer").catch(() => {});
     }
-  }, []); // eslint-disable-line
+  }, []);
 
   const today = new Date().toISOString().split("T")[0];
   const todayBookings = allBookings.filter(

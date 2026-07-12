@@ -1,4 +1,3 @@
-// src/pages/HistoryPage.tsx
 import React, { useEffect, useState } from "react";
 import {
   Button,
@@ -20,7 +19,6 @@ import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import StarIcon from "@mui/icons-material/Star";
 import BoltIcon from "@mui/icons-material/Bolt";
 import { useBookingStore } from "@/store/bookingStore";
-import { useAuthStore } from "@/store/authStore";
 import { BookingStatus } from "@/types/Booking";
 import { formatCurrency, formatDate, formatDateTime } from "@/utils/helpers";
 import NotificationSnackbar from "@/components/shared/NotificationSnackbar";
@@ -52,7 +50,7 @@ const HistoryPage: React.FC = () => {
     fetchMyBookings().catch(() =>
       notify("Không tải được lịch sử đặt sân!", "error"),
     );
-  }, []); // eslint-disable-line
+  }, []);
 
   const sorted = [...myBookings]
     .filter((b) => filterStatus === "all" || b.status === filterStatus)

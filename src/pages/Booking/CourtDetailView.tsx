@@ -9,36 +9,18 @@ import "dayjs/locale/vi";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { useAuthStore } from "@/store/authStore";
 import { useBookingFlowStore } from "@/store/bookingFlowStore";
-import {
-  getAvailabilityApi,
-  getFixedDurationsApi,
-  FixedDurationOption,
-} from "@/apis/booking.api";
+import { getAvailabilityApi, getFixedDurationsApi } from "@/apis/booking.api";
 import { getSocket } from "@/lib/socket";
 import {
   formatCurrency,
   areConsecutive,
   buildTimeRange,
+  buildFixedOccurrencesPreview,
 } from "@/utils/helpers";
-import { TIME_SLOTS } from "@/types/Booking";
+import { FixedDurationOption, TIME_SLOTS } from "@/types/Booking";
 import LoginPromptDialog from "@/components/auth/LoginPromptDialog";
 import { useNotification } from "@/hooks/useNotification";
 import NotificationSnackbar from "@/components/shared/NotificationSnackbar";
-
-const buildFixedOccurrencesPreview = (
-  startDate: string,
-  months: number,
-): string[] => {
-  const start = dayjs(startDate);
-  const end = start.add(months, "month");
-  const dates: string[] = [];
-  let current = start;
-  while (current.isBefore(end)) {
-    dates.push(current.format("YYYY-MM-DD"));
-    current = current.add(7, "day");
-  }
-  return dates;
-};
 
 const CourtDetailView: React.FC = () => {
   const { isAuthenticated } = useAuthStore();
@@ -73,7 +55,7 @@ const CourtDetailView: React.FC = () => {
         .then(setFixedDurations)
         .catch(() => notify("Không tải được danh sách gói cố định!", "error"));
     }
-  }, [isFixedFlow]); // eslint-disable-line
+  }, [isFixedFlow]);
 
   const loadAvailability = useCallback(async () => {
     if (!selectedCourt) return;
@@ -130,7 +112,7 @@ const CourtDetailView: React.FC = () => {
       });
       socket.off("slots:updated", handleSlotsUpdated);
     };
-  }, [selectedCourt, selectedDate]); // eslint-disable-line
+  }, [selectedCourt, selectedDate]);
 
   if (!selectedCourt) {
     goToCatalog();

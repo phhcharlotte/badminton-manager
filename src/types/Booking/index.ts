@@ -1,5 +1,3 @@
-import { CourtType } from "../Courts";
-
 export const TIME_SLOTS: string[] = [
   "00:00",
   "01:00",
@@ -59,4 +57,22 @@ export interface Booking {
   cancelReason?: string;
   createdAt: string;
   updatedAt: string;
+}
+export interface CreateBookingPayload {
+  courtId: string;
+  date: string;
+  slots: string[];
+  notes?: string;
+}
+export interface FixedDurationOption {
+  months: 1 | 2 | 3 | 6 | 12;
+  label: string;
+  discountPercent: number;
+}
+export interface CreateFixedBookingPayload {
+  courtId: string;
+  startDate: string;
+  slots: string[];
+  durationMonths: 1 | 2 | 3 | 6 | 12;
+  notes?: string;
 }

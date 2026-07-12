@@ -25,7 +25,7 @@ const CourtsCatalogView: React.FC = () => {
 
   useEffect(() => {
     fetchCourts(typeFilter === "all" ? undefined : { type: typeFilter });
-  }, [typeFilter]); // eslint-disable-line
+  }, [typeFilter]);
 
   const filtered = courts.filter((c) => {
     const keyword = search.toLowerCase();
@@ -53,12 +53,14 @@ const CourtsCatalogView: React.FC = () => {
           placeholder="Tìm kiếm sân..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon fontSize="small" />
-              </InputAdornment>
-            ),
+          slotProps={{
+            input: {
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon fontSize="small" />
+                </InputAdornment>
+              ),
+            },
           }}
           sx={{ minWidth: 220 }}
         />

@@ -1,4 +1,3 @@
-// src/pages/ProfilePage.tsx
 import React, { useState } from "react";
 import {
   Button,
@@ -456,16 +455,19 @@ const ProfilePage: React.FC = () => {
                     onChange={(e) => setOldPw(e.target.value)}
                     size="small"
                     fullWidth
-                    InputProps={{
-                      endAdornment: (
-                        <InputAdornment position="end">
-                          <IconButton
-                            onClick={() => setShowOld(!showOld)}
-                            size="small">
-                            {showOld ? <VisibilityOff /> : <Visibility />}
-                          </IconButton>
-                        </InputAdornment>
-                      ),
+                    slotProps={{
+                      input: {
+                        endAdornment: (
+                          <InputAdornment position="end">
+                            <IconButton
+                              onClick={() => setShowOld((prev) => !prev)}
+                              edge="end"
+                              size="small">
+                              {showOld ? <VisibilityOff /> : <Visibility />}
+                            </IconButton>
+                          </InputAdornment>
+                        ),
+                      },
                     }}
                   />
                   <TextField
@@ -475,16 +477,19 @@ const ProfilePage: React.FC = () => {
                     onChange={(e) => setNewPw(e.target.value)}
                     size="small"
                     fullWidth
-                    InputProps={{
-                      endAdornment: (
-                        <InputAdornment position="end">
-                          <IconButton
-                            onClick={() => setShowNew(!showNew)}
-                            size="small">
-                            {showNew ? <VisibilityOff /> : <Visibility />}
-                          </IconButton>
-                        </InputAdornment>
-                      ),
+                    slotProps={{
+                      input: {
+                        endAdornment: (
+                          <InputAdornment position="end">
+                            <IconButton
+                              onClick={() => setShowNew((prev) => !prev)}
+                              edge="end"
+                              size="small">
+                              {showOld ? <VisibilityOff /> : <Visibility />}
+                            </IconButton>
+                          </InputAdornment>
+                        ),
+                      },
                     }}
                   />
                   <TextField

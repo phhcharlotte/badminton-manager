@@ -1,17 +1,10 @@
+import {
+  GroupBy,
+  RevenueByCourtRow,
+  RevenueReport,
+  RevenueSummary,
+} from "@/types/Revenue";
 import { apiClient } from "./axiosClient";
-
-export interface RevenuePeriodStat {
-  revenue: number;
-  bookingsCount: number;
-}
-
-export interface RevenueSummary {
-  today: RevenuePeriodStat;
-  thisWeek: RevenuePeriodStat;
-  thisMonth: RevenuePeriodStat;
-  thisQuarter: RevenuePeriodStat;
-  thisYear: RevenuePeriodStat;
-}
 
 export const getRevenueSummaryApi = async (courtId?: string) => {
   const { data } = await apiClient.get("/bookings/revenue/summary", {
@@ -19,21 +12,6 @@ export const getRevenueSummaryApi = async (courtId?: string) => {
   });
   return data.data as RevenueSummary;
 };
-
-export type GroupBy = "day" | "week" | "month" | "quarter" | "year";
-
-export interface RevenueReportRow {
-  period: string;
-  revenue: number;
-  bookingsCount: number;
-}
-
-export interface RevenueReport {
-  groupBy: GroupBy;
-  data: RevenueReportRow[];
-  totalRevenue: number;
-  totalBookings: number;
-}
 
 export const getRevenueReportApi = async (params: {
   groupBy: GroupBy;
@@ -44,13 +22,6 @@ export const getRevenueReportApi = async (params: {
   const { data } = await apiClient.get("/bookings/revenue/report", { params });
   return data.data as RevenueReport;
 };
-
-export interface RevenueByCourtRow {
-  courtId: string;
-  courtName: string;
-  revenue: number;
-  bookingsCount: number;
-}
 
 export const getRevenueByCourtApi = async (params?: {
   from?: string;

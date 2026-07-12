@@ -1,4 +1,3 @@
-// src/pages/BookingFlowPage.tsx
 import React from "react";
 import { useBookingFlowStore } from "@/store/bookingFlowStore";
 import CourtsCatalogView from "./Booking/CourtsCatalogView";

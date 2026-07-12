@@ -1,4 +1,3 @@
-// src/pages/ManageUsersPage.tsx
 import React, { useEffect, useState } from "react";
 import {
   Button,
@@ -31,6 +30,7 @@ import { useAuthStore } from "@/store/authStore";
 import { User, UserRole } from "@/types";
 import NotificationSnackbar from "@/components/shared/NotificationSnackbar";
 import { useNotification } from "@/hooks/useNotification";
+import { AVATAR_COLORS } from "@/constants/manage";
 
 interface ManagerForm {
   fullName: string;
@@ -56,12 +56,6 @@ const ROLE_CONFIG: Record<
   admin: { label: "Admin", color: "error", icon: AdminPanelSettingsIcon },
   manager: { label: "Quản lý", color: "warning", icon: ManageAccountsIcon },
   customer: { label: "Khách hàng", color: "info", icon: PersonIcon },
-};
-
-const AVATAR_COLORS: Record<UserRole, { bg: string; color: string }> = {
-  admin: { bg: "#fee2e2", color: "#dc2626" },
-  manager: { bg: "#fef3c7", color: "#d97706" },
-  customer: { bg: "#dbeafe", color: "#2563eb" },
 };
 
 const ManageUsersPage: React.FC = () => {
@@ -90,7 +84,7 @@ const ManageUsersPage: React.FC = () => {
     fetchUsers(roleFilter === "all" ? undefined : roleFilter)
       .catch(() => notify("Không tải được danh sách người dùng!", "error"))
       .finally(() => setLoading(false));
-  }, [roleFilter]); // eslint-disable-line
+  }, [roleFilter]);
 
   const filtered = users.filter((u) => {
     const keyword = search.toLowerCase();
@@ -241,12 +235,14 @@ const ManageUsersPage: React.FC = () => {
           placeholder="Tìm theo tên, email, SĐT..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon fontSize="small" />
-              </InputAdornment>
-            ),
+          slotProps={{
+            input: {
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon fontSize="small" />
+                </InputAdornment>
+              ),
+            },
           }}
           sx={{ minWidth: 260 }}
         />
@@ -492,16 +488,19 @@ const ManageUsersPage: React.FC = () => {
               size="small"
               fullWidth
               helperText="Tối thiểu 8 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt"
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton
-                      onClick={() => setShowPwd(!showPwd)}
-                      size="small">
-                      {showPwd ? <VisibilityOff /> : <Visibility />}
-                    </IconButton>
-                  </InputAdornment>
-                ),
+              slotProps={{
+                input: {
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        onClick={() => setShowPwd((prev) => !prev)}
+                        edge="end"
+                        size="small">
+                        {showPwd ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                },
               }}
             />
             <TextField

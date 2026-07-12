@@ -1,4 +1,3 @@
-// src/pages/RevenuePage.tsx
 import React, { useEffect, useState } from "react";
 import { TextField, MenuItem, CircularProgress, Alert } from "@mui/material";
 import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
@@ -12,41 +11,16 @@ import {
   getRevenueSummaryApi,
   getRevenueReportApi,
   getRevenueByCourtApi,
-  RevenueSummary,
-  RevenueReport,
-  RevenueByCourtRow,
-  GroupBy,
 } from "@/apis/revenue.api";
 import { useCourtStore } from "@/store/courtStore";
-import { formatCurrency } from "@/utils/helpers";
-
-const GROUP_BY_OPTIONS: { value: GroupBy; label: string }[] = [
-  { value: "day", label: "Theo ngày" },
-  { value: "week", label: "Theo tuần" },
-  { value: "month", label: "Theo tháng" },
-  { value: "quarter", label: "Theo quý" },
-  { value: "year", label: "Theo năm" },
-];
-
-const formatPeriodLabel = (period: string, groupBy: GroupBy): string => {
-  if (groupBy === "day") {
-    const [y, m, d] = period.split("-");
-    return `${d}/${m}/${y}`;
-  }
-  if (groupBy === "month") {
-    const [y, m] = period.split("-");
-    return `Tháng ${m}/${y}`;
-  }
-  if (groupBy === "week") {
-    const [y, w] = period.split("-W");
-    return `Tuần ${w}/${y}`;
-  }
-  if (groupBy === "quarter") {
-    const [y, q] = period.split("-");
-    return `${q}/${y}`;
-  }
-  return `Năm ${period}`;
-};
+import { formatCurrency, formatPeriodLabel } from "@/utils/helpers";
+import {
+  GroupBy,
+  RevenueByCourtRow,
+  RevenueReport,
+  RevenueSummary,
+} from "@/types/Revenue";
+import { GROUP_BY_OPTIONS } from "@/constants/revenue";
 
 const RevenuePage: React.FC = () => {
   const { courts, fetchCourts } = useCourtStore();
@@ -70,7 +44,7 @@ const RevenuePage: React.FC = () => {
     getRevenueSummaryApi()
       .then(setSummary)
       .finally(() => setLoadingSummary(false));
-  }, []); // eslint-disable-line
+  }, []);
 
   const loadReport = async () => {
     setLoadingReport(true);
@@ -94,7 +68,7 @@ const RevenuePage: React.FC = () => {
 
   useEffect(() => {
     loadReport();
-  }, [groupBy, fromDate, toDate, courtFilter]); // eslint-disable-line
+  }, [groupBy, fromDate, toDate, courtFilter]);
 
   useEffect(() => {
     setLoadingByCourt(true);
@@ -104,7 +78,7 @@ const RevenuePage: React.FC = () => {
     })
       .then(setByCourt)
       .finally(() => setLoadingByCourt(false));
-  }, [fromDate, toDate]); // eslint-disable-line
+  }, [fromDate, toDate]);
 
   const maxRevenueInReport = report?.data.length
     ? Math.max(...report.data.map((r) => r.revenue))

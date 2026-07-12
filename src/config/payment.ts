@@ -1,4 +1,3 @@
-// src/config/payment.ts
 export const BANK_CONFIG = {
   bankId: import.meta.env.VITE_BANK_ID || "vietcombank",
   accountNo: import.meta.env.VITE_BANK_ACCOUNT_NO || "0000000000",

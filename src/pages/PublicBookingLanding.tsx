@@ -1,4 +1,3 @@
-// src/pages/PublicBookingLanding.tsx
 import React, { useState } from "react";
 import { Button } from "@mui/material";
 import SportsTennisIcon from "@mui/icons-material/SportsTennis";

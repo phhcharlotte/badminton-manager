@@ -4,10 +4,9 @@ import { Button, CircularProgress, Alert } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import QrCode2Icon from "@mui/icons-material/QrCode2";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import dayjs from "dayjs";
 import { useBookingFlowStore } from "@/store/bookingFlowStore";
 import { useBookingStore } from "@/store/bookingStore";
-import { formatCurrency } from "@/utils/helpers";
+import { formatCurrency, formatDate } from "@/utils/helpers";
 import { buildVietQrUrl } from "@/config/payment";
 
 interface Props {
@@ -67,7 +66,7 @@ const PaymentView: React.FC<Props> = ({ onDone }) => {
     };
 
     create();
-  }, []); // eslint-disable-line
+  }, []);
 
   if (creating) {
     return (
@@ -148,7 +147,7 @@ const PaymentView: React.FC<Props> = ({ onDone }) => {
               <div className="summary-row">
                 <span className="summary-label">Ngày</span>
                 <span className="summary-value">
-                  {dayjs(createdBooking.date).format("DD/MM/YYYY")}
+                  {formatDate(createdBooking.date)}
                 </span>
               </div>
               <div className="summary-row">

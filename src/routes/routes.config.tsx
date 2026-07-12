@@ -4,7 +4,7 @@ import { UserRole } from "@/types";
 
 import DashboardPage from "@/pages/DashboardPage";
 import CourtsPage from "@/pages/CourtsPage";
-import BookingFlowPage from "../pages/BookingFlowPage";
+import BookingFlowPage from "@/pages/BookingFlowPage";
 import HistoryPage from "@/pages/HistoryPage";
 import ManageBookingsPage from "@/pages/ManageBookingsPage";
 import ManageCourtsPage from "@/pages/ManageCourtsPage";

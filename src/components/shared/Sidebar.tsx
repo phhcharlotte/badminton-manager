@@ -10,6 +10,10 @@ import {
   canAccessPage,
 } from "@/routes/routes.config";
 
+import SportsTennisOutlinedIcon from "@mui/icons-material/SportsTennisOutlined";
+import LogoutOutlinedIcon from "@mui/icons-material/LogoutOutlined";
+import ChevronRightIcon from "@mui/icons-material/ChevronRight";
+
 interface SidebarProps {
   activePage: string;
   onNavigate: (page: string) => void;
@@ -44,7 +48,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     <div className="sidebar">
       {/* Logo */}
       <div className="sidebar-logo">
-        <span className="logo-icon">🏸</span>
+        <SportsTennisOutlinedIcon className="logo-icon" fontSize="medium" />
         <div className="logo-title">BadmintonHub</div>
         <div className="logo-subtitle">Booking System</div>
       </div>
@@ -53,13 +57,14 @@ const Sidebar: React.FC<SidebarProps> = ({
       <div className="sidebar-nav">
         <div className="nav-section-label">Menu chính</div>
         {visibleItems.map((item) => {
+          const Icon = item.icon;
           const hasBadge = item.badge === "pending" && pendingCount > 0;
           return (
             <div
               key={item.key}
               className={`nav-item ${activePage === item.key ? "active" : ""}`}
               onClick={() => handleNav(item.key)}>
-              <span className="nav-icon">{item.icon}</span>
+              <Icon className="nav-icon" fontSize="small" />
               <span style={{ flex: 1 }}>{item.label}</span>
               {hasBadge && (
                 <span
@@ -102,11 +107,15 @@ const Sidebar: React.FC<SidebarProps> = ({
                 {ROLE_LABELS[currentUser.role]}
               </div>
             </div>
-            <span style={{ fontSize: 14, opacity: 0.5 }}>›</span>
+            <ChevronRightIcon style={{ opacity: 0.5 }} fontSize="small" />
           </div>
         )}
         <button className="logout-btn" onClick={() => logout()}>
-          🚪 Đăng xuất
+          <LogoutOutlinedIcon
+            fontSize="small"
+            style={{ marginRight: 6, verticalAlign: "middle" }}
+          />
+          Đăng xuất
         </button>
       </div>
     </div>

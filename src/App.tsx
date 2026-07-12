@@ -1,14 +1,16 @@
 // src/App.tsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
-import { useAuthStore } from "./store/authStore";
-import { UserRole } from "./types";
+import { useAuthStore } from "@/store/authStore";
+import { UserRole } from "@/types";
 
-import LoginPage from "./pages/Login/LoginPage";
-import Sidebar from "./components/shared/Sidebar";
-import MobileNavbar from "./components/shared/MobileNavbar";
-import ProtectedRoute from "./components/auth/ProtectedRoute";
+import PublicBookingLanding from "./pages/PublicBookingLanding";
+import Sidebar from "@/components/shared/Sidebar";
+import MobileNavbar from "@/components/shared/MobileNavbar";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
+import { useBookingSocketEvents } from "@/hooks/useBookingSocketEvents";
+import { useBookingFlowStore } from "@/store/bookingFlowStore";
 
 import {
   PageKey,
@@ -16,10 +18,9 @@ import {
   PAGE_TITLES,
   getDefaultPage,
   renderPageComponent,
-} from "./routes/routes.config";
+} from "@/routes/routes.config";
 
 import "./styles/main.scss";
-import { useBookingSocketEvents } from "./hooks/useBookingSocketEvents";
 
 // ── MUI Theme ─────────────────────────────────────────────────────────
 const theme = createTheme({
@@ -113,20 +114,30 @@ const FullScreenLoading: React.FC = () => (
   </div>
 );
 
+type AuthView = "home" | "login";
+
 // ── App ────────────────────────────────────────────────────────────────
 const App: React.FC = () => {
   const { isAuthenticated, currentUser, isLoading, initAuth } = useAuthStore();
   const [activePage, setActivePage] = useState<PageKey | "">("");
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  const wasAuthenticated = useRef(isAuthenticated);
+
   // Khoi phuc phien dang nhap khi app vua load (F5, mo tab moi)
-  // Access token trong bo nho da mat, nhung refreshToken (httpOnly cookie) van con
-  // -> goi initAuth() de lay lai access token + thong tin user ma khong can dang nhap lai
   useEffect(() => {
     initAuth();
   }, [initAuth]);
 
+  // Lang nghe su kien booking real-time (chi khi da dang nhap, socket moi ket noi duoc)
   useBookingSocketEvents(isAuthenticated);
+
+  useEffect(() => {
+    if (wasAuthenticated.current && !isAuthenticated) {
+      useBookingFlowStore.getState().reset();
+    }
+    wasAuthenticated.current = isAuthenticated;
+  }, [isAuthenticated]);
 
   // Default page on login
   useEffect(() => {
@@ -163,12 +174,12 @@ const App: React.FC = () => {
     );
   }
 
-  // ── Not logged in ──
+  // ── Not logged in: trang chu cong khai -> dang nhap ──
   if (!isAuthenticated) {
     return (
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        <LoginPage onLoginSuccess={() => {}} />
+        <PublicBookingLanding />
       </ThemeProvider>
     );
   }
@@ -200,7 +211,6 @@ const App: React.FC = () => {
       <CssBaseline />
 
       <div className="app-layout">
-        {/* ── Sidebar (desktop + mobile) ── */}
         <Sidebar
           activePage={activePage}
           onNavigate={navigate}
@@ -208,13 +218,11 @@ const App: React.FC = () => {
           onMobileClose={() => setSidebarOpen(false)}
         />
 
-        {/* ── Mobile top bar ── */}
         <MobileNavbar
           onMenuClick={() => setSidebarOpen(true)}
           pageTitle={activePage}
         />
 
-        {/* ── Main content ── */}
         <main className="main-content">{renderPage()}</main>
       </div>
     </ThemeProvider>

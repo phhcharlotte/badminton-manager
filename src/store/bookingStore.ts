@@ -19,7 +19,20 @@ interface BookingStore {
   fetchMyBookings: () => Promise<void>;
   createBooking: (
     payload: CreateBookingPayload,
-  ) => Promise<{ success: boolean; message: string; conflict?: boolean }>;
+  ) => Promise<{
+    success: boolean;
+    message: string;
+    conflict?: boolean;
+    booking?: Booking;
+  }>;
+  createFixedBooking: (
+    payload: CreateFixedBookingPayload,
+  ) => Promise<{
+    success: boolean;
+    message: string;
+    conflict?: boolean;
+    booking?: Booking;
+  }>;
   cancelBooking: (id: string) => Promise<{ success: boolean; message: string }>;
 
   fetchAllBookings: (params?: {
@@ -38,9 +51,6 @@ interface BookingStore {
 
   getBookingsByUser: (userId: string) => Booking[];
   getAllBookings: () => Booking[];
-  createFixedBooking: (
-    payload: CreateFixedBookingPayload,
-  ) => Promise<{ success: boolean; message: string; conflict?: boolean }>;
 }
 
 export const useBookingStore = create<BookingStore>((set, get) => ({
@@ -64,14 +74,34 @@ export const useBookingStore = create<BookingStore>((set, get) => ({
       set({ myBookings: [booking, ...get().myBookings] });
       return {
         success: true,
-        message: "Đặt sân thành công! Nhân viên sẽ xác nhận trong 30 phút.",
+        message: "🎉 Đặt sân thành công! Nhân viên sẽ xác nhận trong 30 phút.",
+        booking,
       };
     } catch (err: any) {
       const errorCode = err?.response?.data?.errorCode;
-      // SLOT_ALREADY_BOOKED: nguoi khac vua dat truoc trong luc minh dang thao tac
       return {
         success: false,
         message: err?.response?.data?.message || "Đặt sân thất bại!",
+        conflict: errorCode === "SLOT_ALREADY_BOOKED",
+      };
+    }
+  },
+
+  createFixedBooking: async (payload) => {
+    try {
+      const booking = await createFixedBookingApi(payload);
+      set({ myBookings: [booking, ...get().myBookings] });
+      return {
+        success: true,
+        message:
+          "🎉 Đăng ký sân cố định thành công! Nhân viên sẽ xác nhận trong 30 phút.",
+        booking,
+      };
+    } catch (err: any) {
+      const errorCode = err?.response?.data?.errorCode;
+      return {
+        success: false,
+        message: err?.response?.data?.message || "Đăng ký thất bại!",
         conflict: errorCode === "SLOT_ALREADY_BOOKED",
       };
     }
@@ -131,22 +161,4 @@ export const useBookingStore = create<BookingStore>((set, get) => ({
   getBookingsByUser: (userId) =>
     get().myBookings.filter((b) => b.user === userId),
   getAllBookings: () => get().allBookings,
-  createFixedBooking: async (payload) => {
-    try {
-      const booking = await createFixedBookingApi(payload);
-      set({ myBookings: [booking, ...get().myBookings] });
-      return {
-        success: true,
-        message:
-          "Đăng ký sân cố định thành công! Nhân viên sẽ xác nhận trong 30 phút.",
-      };
-    } catch (err: any) {
-      const errorCode = err?.response?.data?.errorCode;
-      return {
-        success: false,
-        message: err?.response?.data?.message || "Đăng ký thất bại!",
-        conflict: errorCode === "SLOT_ALREADY_BOOKED",
-      };
-    }
-  },
 }));

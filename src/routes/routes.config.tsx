@@ -4,12 +4,24 @@ import { UserRole } from "@/types";
 
 import DashboardPage from "@/pages/DashboardPage";
 import CourtsPage from "@/pages/CourtsPage";
-import BookingPage from "@/pages/BookingPage";
+import BookingFlowPage from "../pages/BookingFlowPage";
 import HistoryPage from "@/pages/HistoryPage";
 import ManageBookingsPage from "@/pages/ManageBookingsPage";
 import ManageCourtsPage from "@/pages/ManageCourtsPage";
 import ManageUsersPage from "@/pages/ManageUsersPage";
 import ProfilePage from "@/pages/ProfilePage";
+import RevenuePage from "@/pages/RevenuePage";
+
+import DashboardIcon from "@mui/icons-material/DashboardOutlined";
+import SportsTennisIcon from "@mui/icons-material/SportsTennisOutlined";
+import EventAvailableIcon from "@mui/icons-material/EventAvailableOutlined";
+import HistoryIcon from "@mui/icons-material/HistoryOutlined";
+import AssignmentIcon from "@mui/icons-material/AssignmentOutlined";
+import StadiumIcon from "@mui/icons-material/StadiumOutlined";
+import PeopleAltIcon from "@mui/icons-material/PeopleAltOutlined";
+import PaidIcon from "@mui/icons-material/PaidOutlined";
+import PersonOutlineIcon from "@mui/icons-material/PersonOutlineOutlined";
+import { SvgIconComponent } from "@mui/icons-material";
 
 export type PageKey =
   | "dashboard"
@@ -19,6 +31,7 @@ export type PageKey =
   | "manage-bookings"
   | "manage-courts"
   | "manage-users"
+  | "revenue"
   | "profile";
 
 // Nguon su that DUY NHAT cho phan quyen theo trang.
@@ -31,6 +44,7 @@ export const PAGE_ROLES: Record<PageKey, UserRole[]> = {
   "manage-bookings": ["admin", "manager"],
   "manage-courts": ["admin"],
   "manage-users": ["admin"],
+  revenue: ["admin", "manager"],
   profile: ["admin", "manager", "customer"],
 };
 
@@ -42,11 +56,14 @@ export const PAGE_TITLES: Record<PageKey, string> = {
   "manage-bookings": "Quản lý đặt sân",
   "manage-courts": "Quản lý sân",
   "manage-users": "Quản lý người dùng",
+  revenue: "Kế toán / Doanh thu",
   profile: "Hồ sơ cá nhân",
 };
 
 export interface NavItem {
-  icon: string;
+  // Truoc day la emoji string, gio la component icon cua MUI.
+  // Render trong Sidebar bang <item.icon fontSize="small" /> thay vi {item.icon}
+  icon: SvgIconComponent;
   label: string;
   key: PageKey;
   badge?: "pending";
@@ -55,19 +72,24 @@ export interface NavItem {
 // Danh sach menu sidebar - KHONG khai bao rieng "roles" o day nua,
 // quyen hien thi luon lay tu PAGE_ROLES[item.key] de tranh 2 nguon du lieu bi lech nhau.
 export const NAV_ITEMS: NavItem[] = [
-  { icon: "🏠", label: "Tổng quan", key: "dashboard" },
-  { icon: "🏸", label: "Danh sách sân", key: "courts" },
-  { icon: "📅", label: "Đặt sân", key: "booking" },
-  { icon: "📋", label: "Lịch sử đặt sân", key: "history" },
+  { icon: DashboardIcon, label: "Tổng quan", key: "dashboard" },
+  { icon: SportsTennisIcon, label: "Danh sách sân", key: "courts" },
+  { icon: EventAvailableIcon, label: "Đặt sân", key: "booking" },
+  { icon: HistoryIcon, label: "Lịch sử đặt sân", key: "history" },
   {
-    icon: "📊",
+    icon: AssignmentIcon,
     label: "Quản lý đặt sân",
     key: "manage-bookings",
     badge: "pending",
   },
-  { icon: "🏟️", label: "Quản lý sân", key: "manage-courts" },
-  { icon: "👥", label: "Quản lý người dùng", key: "manage-users" },
-  { icon: "👤", label: "Hồ sơ cá nhân", key: "profile" },
+  { icon: StadiumIcon, label: "Quản lý sân", key: "manage-courts" },
+  {
+    icon: PeopleAltIcon,
+    label: "Quản lý người dùng",
+    key: "manage-users",
+  },
+  { icon: PaidIcon, label: "Kế toán / Doanh thu", key: "revenue" },
+  { icon: PersonOutlineIcon, label: "Hồ sơ cá nhân", key: "profile" },
 ];
 
 export const ROLE_LABELS: Record<UserRole, string> = {
@@ -109,11 +131,12 @@ export const renderPageComponent = (
         }
       />
     ),
-    booking: <BookingPage />,
+    booking: <BookingFlowPage />,
     history: <HistoryPage />,
     "manage-bookings": <ManageBookingsPage />,
     "manage-courts": <ManageCourtsPage />,
     "manage-users": <ManageUsersPage />,
+    revenue: <RevenuePage />,
     profile: <ProfilePage />,
   };
 

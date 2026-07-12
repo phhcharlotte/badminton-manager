@@ -11,12 +11,12 @@ import {
 import {
   Visibility,
   VisibilityOff,
-  CalendarMonthOutlined,
-  LocalAtmOutlined,
-  InsertChartOutlined,
-  CheckBoxOutlined,
-  ArrowBackOutlined,
-  SportsTennisOutlined,
+  SportsTennis,
+  ArrowBack,
+  CalendarMonth,
+  Payments,
+  AdminPanelSettings,
+  History,
 } from "@mui/icons-material";
 import { useAuthStore } from "@/store/authStore";
 
@@ -136,30 +136,31 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
     }
   };
 
+  // Icon filled + màu riêng cho từng feature để phần hero sinh động hơn
   const features = [
     {
-      icon: <CalendarMonthOutlined />,
+      icon: <CalendarMonth sx={{ fontSize: 20 }} />,
       text: "Đặt sân theo ngày và khung giờ linh hoạt",
-      color: "#4ade80",
-      bg: "rgba(74, 222, 128, 0.15)",
+      color: "#2d6a4f",
+      bg: "rgba(82, 183, 136, 0.18)",
     },
     {
-      icon: <LocalAtmOutlined />,
+      icon: <Payments sx={{ fontSize: 20 }} />,
       text: "Giá rõ ràng: cố định và vãng lai",
-      color: "#facc15",
-      bg: "rgba(250, 204, 21, 0.15)",
+      color: "#b45309",
+      bg: "rgba(251, 191, 36, 0.2)",
     },
     {
-      icon: <InsertChartOutlined />,
+      icon: <AdminPanelSettings sx={{ fontSize: 20 }} />,
       text: "Quản lý đặt sân toàn diện cho admin",
-      color: "#38bdf8",
-      bg: "rgba(56, 189, 248, 0.15)",
+      color: "#1d4ed8",
+      bg: "rgba(96, 165, 250, 0.2)",
     },
     {
-      icon: <CheckBoxOutlined />,
+      icon: <History sx={{ fontSize: 20 }} />,
       text: "Theo dõi lịch sử đặt sân real-time",
-      color: "#f472b6",
-      bg: "rgba(244, 114, 182, 0.15)",
+      color: "#be185d",
+      bg: "rgba(244, 114, 182, 0.2)",
     },
   ];
 
@@ -179,7 +180,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
               backgroundColor: "rgba(255, 255, 255, 0.12)",
               color: "#ffffff",
             }}>
-            <SportsTennisOutlined sx={{ fontSize: 32 }} />
+            <SportsTennis sx={{ fontSize: 32 }} />
           </span>
           <h1>
             BadmintonHub
@@ -314,7 +315,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                 }}
                 size="small"
                 aria-label="Quay lại đăng nhập">
-                <ArrowBackOutlined />
+                <ArrowBack />
               </IconButton>
               <div>
                 <h2>Đăng ký</h2>

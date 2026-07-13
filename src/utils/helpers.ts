@@ -3,7 +3,7 @@ import { GroupBy } from "@/types/Revenue";
 import dayjs from "dayjs";
 
 export const formatCurrency = (amount: number): string =>
-  amount.toLocaleString("vi-VN") + "đ";
+  (amount ?? 0).toLocaleString("vi-VN") + "đ";
 
 export const formatDate = (dateStr: string): string =>
   dayjs(dateStr).format("DD/MM/YYYY");

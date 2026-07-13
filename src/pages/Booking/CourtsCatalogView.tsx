@@ -12,20 +12,23 @@ import StadiumIcon from "@mui/icons-material/Stadium";
 import StarIcon from "@mui/icons-material/Star";
 import BoltIcon from "@mui/icons-material/Bolt";
 import SearchOffIcon from "@mui/icons-material/SearchOff";
+
+import { getCourtIcon } from "@/config/courtIcons";
+
 import { useCourtStore } from "@/store/courtStore";
 import { useBookingFlowStore } from "@/store/bookingFlowStore";
 import { CourtType } from "@/types/Courts";
 import { formatCurrency } from "@/utils/helpers";
 
 const CourtsCatalogView: React.FC = () => {
-  const { courts, isLoading, error, fetchCourts } = useCourtStore();
+  const { courts, isLoading, error } = useCourtStore();
   const selectCourt = useBookingFlowStore((s) => s.selectCourt);
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<"all" | CourtType>("all");
 
-  useEffect(() => {
-    fetchCourts(typeFilter === "all" ? undefined : { type: typeFilter });
-  }, [typeFilter]);
+  // useEffect(() => {
+  //   fetchCourts(typeFilter === "all" ? undefined : { type: typeFilter });
+  // }, [typeFilter]);
 
   const filtered = courts.filter((c) => {
     const keyword = search.toLowerCase();
@@ -106,54 +109,103 @@ const CourtsCatalogView: React.FC = () => {
       ) : (
         <>
           <div className="court-grid">
-            {filtered.map((court) => (
-              <div
-                key={court._id}
-                className="court-card"
-                onClick={() => selectCourt(court)}
-                style={{ cursor: "pointer" }}>
-                <div className="court-card-image">
-                  {court.image}
-                  <div className={`court-type-badge ${court.type}`}>
-                    {court.type === "fixed" ? (
-                      <StarIcon
-                        fontSize="small"
-                        sx={{ verticalAlign: "middle", mr: 0.5 }}
-                      />
-                    ) : (
-                      <BoltIcon
-                        fontSize="small"
-                        sx={{ verticalAlign: "middle", mr: 0.5 }}
-                      />
-                    )}
-                    {court.type === "fixed" ? "Cố định" : "Vãng lai"}
-                  </div>
-                </div>
-                <div className="court-card-body">
-                  <div className="court-name">{court.name}</div>
-                  <div className="court-desc">{court.description}</div>
-                  <div className="court-price">
-                    {formatCurrency(court.pricePerHour)}
-                    <span className="price-label">/ giờ</span>
-                  </div>
-                  <button
+            {filtered.map((court) => {
+              const CourtIcon = getCourtIcon(court.image);
+              return (
+                <div
+                  key={court._id}
+                  className="court-card"
+                  onClick={() => selectCourt(court)}
+                  style={{ cursor: "pointer" }}>
+                  <div
+                    className="court-card-image"
                     style={{
-                      marginTop: 14,
-                      width: "100%",
-                      padding: "11px",
-                      background: "linear-gradient(135deg,#1a472a,#2d6a4f)",
-                      color: "white",
-                      border: "none",
-                      borderRadius: 10,
-                      fontWeight: 700,
-                      fontSize: 14,
-                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
                     }}>
-                    Xem lịch & đặt sân
-                  </button>
+                    <CourtIcon sx={{ fontSize: 56, color: "#1a472a" }} />
+                  </div>
+                  <div className="court-card-body">
+                    <div className="court-name">{court.name}</div>
+                    <div className="court-desc">{court.description}</div>
+                    <div style={{ display: "flex", gap: 12, marginTop: 10 }}>
+                      <div
+                        style={{
+                          flex: 1,
+                          background: "#fef3c7",
+                          borderRadius: 8,
+                          padding: "6px 10px",
+                          textAlign: "center",
+                        }}>
+                        <div
+                          style={{
+                            fontSize: 11,
+                            color: "#b45309",
+                            fontWeight: 700,
+                          }}>
+                          <StarIcon
+                            sx={{ fontSize: 13, verticalAlign: "middle" }}
+                          />{" "}
+                          Cố định
+                        </div>
+                        <div
+                          style={{
+                            fontSize: 14,
+                            fontWeight: 800,
+                            color: "#b45309",
+                          }}>
+                          {formatCurrency(court.pricePerHourFixed)}
+                        </div>
+                      </div>
+                      <div
+                        style={{
+                          flex: 1,
+                          background: "#dbeafe",
+                          borderRadius: 8,
+                          padding: "6px 10px",
+                          textAlign: "center",
+                        }}>
+                        <div
+                          style={{
+                            fontSize: 11,
+                            color: "#1e40af",
+                            fontWeight: 700,
+                          }}>
+                          <BoltIcon
+                            sx={{ fontSize: 13, verticalAlign: "middle" }}
+                          />{" "}
+                          Vãng lai
+                        </div>
+                        <div
+                          style={{
+                            fontSize: 14,
+                            fontWeight: 800,
+                            color: "#1e40af",
+                          }}>
+                          {formatCurrency(court.pricePerHourCasual)}
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      style={{
+                        marginTop: 14,
+                        width: "100%",
+                        padding: "11px",
+                        background: "linear-gradient(135deg,#1a472a,#2d6a4f)",
+                        color: "white",
+                        border: "none",
+                        borderRadius: 10,
+                        fontWeight: 700,
+                        fontSize: 14,
+                        cursor: "pointer",
+                      }}>
+                      Xem lịch & đặt sân
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
           {filtered.length === 0 && (
             <div

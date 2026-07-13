@@ -1,15 +1,12 @@
 import { create } from "zustand";
+import { Booking, BookingStatus, CreateBookingPayload } from "@/types/Booking";
 import {
   createBookingApi,
   listMyBookingsApi,
   cancelMyBookingApi,
   listAllBookingsApi,
   updateBookingStatusApi,
-  CreateBookingPayload,
-  createFixedBookingApi,
-  CreateFixedBookingPayload,
 } from "@/apis/booking.api";
-import { Booking, BookingStatus } from "@/types/Booking";
 
 interface BookingStore {
   myBookings: Booking[];
@@ -17,17 +14,7 @@ interface BookingStore {
   isLoading: boolean;
 
   fetchMyBookings: () => Promise<void>;
-  createBooking: (
-    payload: CreateBookingPayload,
-  ) => Promise<{
-    success: boolean;
-    message: string;
-    conflict?: boolean;
-    booking?: Booking;
-  }>;
-  createFixedBooking: (
-    payload: CreateFixedBookingPayload,
-  ) => Promise<{
+  createBooking: (payload: CreateBookingPayload) => Promise<{
     success: boolean;
     message: string;
     conflict?: boolean;
@@ -46,9 +33,7 @@ interface BookingStore {
     cancelReason?: string,
   ) => Promise<{ success: boolean; message: string }>;
 
-  // Goi tu socket event, CHI cap nhat state local, khong goi API
   upsertBookingRealtime: (booking: Booking) => void;
-
   getBookingsByUser: (userId: string) => Booking[];
   getAllBookings: () => Booking[];
 }
@@ -74,7 +59,7 @@ export const useBookingStore = create<BookingStore>((set, get) => ({
       set({ myBookings: [booking, ...get().myBookings] });
       return {
         success: true,
-        message: "🎉 Đặt sân thành công! Nhân viên sẽ xác nhận trong 30 phút.",
+        message: "Đặt sân thành công! Nhân viên sẽ xác nhận trong 30 phút.",
         booking,
       };
     } catch (err: any) {
@@ -82,26 +67,6 @@ export const useBookingStore = create<BookingStore>((set, get) => ({
       return {
         success: false,
         message: err?.response?.data?.message || "Đặt sân thất bại!",
-        conflict: errorCode === "SLOT_ALREADY_BOOKED",
-      };
-    }
-  },
-
-  createFixedBooking: async (payload) => {
-    try {
-      const booking = await createFixedBookingApi(payload);
-      set({ myBookings: [booking, ...get().myBookings] });
-      return {
-        success: true,
-        message:
-          "🎉 Đăng ký sân cố định thành công! Nhân viên sẽ xác nhận trong 30 phút.",
-        booking,
-      };
-    } catch (err: any) {
-      const errorCode = err?.response?.data?.errorCode;
-      return {
-        success: false,
-        message: err?.response?.data?.message || "Đăng ký thất bại!",
         conflict: errorCode === "SLOT_ALREADY_BOOKED",
       };
     }
@@ -151,10 +116,10 @@ export const useBookingStore = create<BookingStore>((set, get) => ({
     set((state) => ({
       myBookings: state.myBookings.some((b) => b._id === booking._id)
         ? state.myBookings.map((b) => (b._id === booking._id ? booking : b))
-        : state.myBookings, // chi cap nhat neu da co san trong danh sach cua chinh minh (khong tu them moi vao HistoryPage nguoi khac)
+        : state.myBookings,
       allBookings: state.allBookings.some((b) => b._id === booking._id)
         ? state.allBookings.map((b) => (b._id === booking._id ? booking : b))
-        : [booking, ...state.allBookings], // staff thay don MOI xuat hien ngay dau danh sach
+        : [booking, ...state.allBookings],
     }));
   },
 

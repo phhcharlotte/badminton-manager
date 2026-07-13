@@ -35,7 +35,6 @@ export interface Booking {
   userName: string;
   court: string;
   courtName: string;
-  courtType: "fixed" | "casual";
   bookingType: BookingType;
   date: string;
   slots: string[];
@@ -44,13 +43,6 @@ export interface Booking {
   hours: number;
   pricePerHour: number;
   totalPrice: number;
-  // Chi co gia tri khi bookingType = 'fixed'
-  durationMonths?: 1 | 2 | 3 | 6 | 12;
-  startDate?: string;
-  endDate?: string;
-  occurrenceDates?: string[];
-  discountPercent?: number;
-  originalTotalPrice?: number;
   status: BookingStatus;
   notes: string;
   cancelledBy?: string | null;
@@ -62,6 +54,7 @@ export interface CreateBookingPayload {
   courtId: string;
   date: string;
   slots: string[];
+  bookingType: BookingType;
   notes?: string;
 }
 export interface FixedDurationOption {

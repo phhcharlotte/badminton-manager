@@ -1,3 +1,4 @@
+// src/pages/ManageCourtsPage.tsx
 import React, { useEffect, useState } from "react";
 import {
   Button,
@@ -6,12 +7,14 @@ import {
   DialogContent,
   DialogActions,
   TextField,
-  MenuItem,
   Switch,
   FormControlLabel,
   Alert,
   IconButton,
   CircularProgress,
+  ToggleButtonGroup,
+  ToggleButton,
+  InputAdornment,
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -22,30 +25,33 @@ import PauseCircleIcon from "@mui/icons-material/PauseCircle";
 import StarIcon from "@mui/icons-material/Star";
 import BoltIcon from "@mui/icons-material/Bolt";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
-import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
 import { useCourtStore } from "@/store/courtStore";
-import { Court, CourtType } from "@/types/Courts/index";
+import { Court } from "@/types/Courts";
 import { formatCurrency } from "@/utils/helpers";
 import NotificationSnackbar from "@/components/shared/NotificationSnackbar";
 import { useNotification } from "@/hooks/useNotification";
+import {
+  COURT_ICON_OPTIONS,
+  DEFAULT_COURT_ICON_KEY,
+  getCourtIcon,
+} from "@/config/courtIcons";
 
 interface CourtForm {
   name: string;
   description: string;
-  type: CourtType;
-  pricePerHour: number;
+  pricePerHourFixed: number;
+  pricePerHourCasual: number;
   image: string;
   isActive: boolean;
 }
 const DEFAULT_FORM: CourtForm = {
   name: "",
   description: "",
-  type: "casual",
-  pricePerHour: 100000,
-  image: "🏸",
+  pricePerHourFixed: 100000,
+  pricePerHourCasual: 120000,
+  image: DEFAULT_COURT_ICON_KEY,
   isActive: true,
 };
-const ICONS = ["🏸", "🏟️", "⭐", "🎯", "🥇", "🏆", "🎖️", "🎗️"];
 
 const ManageCourtsPage: React.FC = () => {
   const {
@@ -66,7 +72,8 @@ const ManageCourtsPage: React.FC = () => {
 
   const [priceDialog, setPriceDialog] = useState(false);
   const [priceEditId, setPriceEditId] = useState("");
-  const [newPrice, setNewPrice] = useState(0);
+  const [newFixedPrice, setNewFixedPrice] = useState(0);
+  const [newCasualPrice, setNewCasualPrice] = useState(0);
   const [priceSaving, setPriceSaving] = useState(false);
 
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -75,7 +82,7 @@ const ManageCourtsPage: React.FC = () => {
 
   useEffect(() => {
     fetchCourts().catch(() => notify("Không tải được danh sách sân!", "error"));
-  }, []);
+  }, []); // eslint-disable-line
 
   const openAdd = () => {
     setEditingCourt(null);
@@ -89,8 +96,8 @@ const ManageCourtsPage: React.FC = () => {
     setForm({
       name: c.name,
       description: c.description,
-      type: c.type,
-      pricePerHour: c.pricePerHour,
+      pricePerHourFixed: c.pricePerHourFixed,
+      pricePerHourCasual: c.pricePerHourCasual,
       image: c.image,
       isActive: c.isActive,
     });
@@ -99,8 +106,12 @@ const ManageCourtsPage: React.FC = () => {
   };
 
   const handleSave = async () => {
-    if (!form.name || form.pricePerHour <= 0) {
-      setFormError("Vui lòng điền đầy đủ thông tin!");
+    if (
+      !form.name ||
+      form.pricePerHourFixed <= 0 ||
+      form.pricePerHourCasual <= 0
+    ) {
+      setFormError("Vui lòng điền đầy đủ tên sân và 2 mức giá lớn hơn 0!");
       return;
     }
     setSaving(true);
@@ -133,14 +144,18 @@ const ManageCourtsPage: React.FC = () => {
 
   const openPrice = (c: Court) => {
     setPriceEditId(c._id);
-    setNewPrice(c.pricePerHour);
+    setNewFixedPrice(c.pricePerHourFixed);
+    setNewCasualPrice(c.pricePerHourCasual);
     setPriceDialog(true);
   };
 
   const handleUpdatePrice = async () => {
-    if (newPrice <= 0) return;
+    if (newFixedPrice <= 0 || newCasualPrice <= 0) return;
     setPriceSaving(true);
-    const result = await editCourt(priceEditId, { pricePerHour: newPrice });
+    const result = await editCourt(priceEditId, {
+      pricePerHourFixed: newFixedPrice,
+      pricePerHourCasual: newCasualPrice,
+    });
     setPriceSaving(false);
     setPriceDialog(false);
     notify(
@@ -206,14 +221,6 @@ const ManageCourtsPage: React.FC = () => {
             ibg: "#fecaca",
             color: "#dc2626",
           },
-          {
-            label: "Sân cố định",
-            value: courts.filter((c) => c.type === "fixed").length,
-            Icon: StarIcon,
-            bg: "#fef3c7",
-            ibg: "#fde68a",
-            color: "#b45309",
-          },
         ].map((s) => (
           <div className="stat-card" key={s.label} style={{ background: s.bg }}>
             <div className="stat-icon" style={{ background: s.ibg }}>
@@ -251,126 +258,124 @@ const ManageCourtsPage: React.FC = () => {
                   <tr>
                     <th>Sân</th>
                     <th>Mô tả</th>
-                    <th>Loại</th>
-                    <th>Giá/giờ</th>
+                    <th>
+                      <StarIcon
+                        fontSize="small"
+                        sx={{ verticalAlign: "middle", mr: 0.5 }}
+                      />
+                      Giá cố định
+                    </th>
+                    <th>
+                      <BoltIcon
+                        fontSize="small"
+                        sx={{ verticalAlign: "middle", mr: 0.5 }}
+                      />
+                      Giá vãng lai
+                    </th>
                     <th>Trạng thái</th>
                     <th>Tạo lúc</th>
                     <th>Thao tác</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {courts.map((court) => (
-                    <tr key={court._id}>
-                      <td>
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 10,
-                          }}>
-                          <span style={{ fontSize: 28 }}>{court.image}</span>
-                          <span style={{ fontWeight: 700, fontSize: 15 }}>
-                            {court.name}
-                          </span>
-                        </div>
-                      </td>
-                      <td
-                        style={{
-                          maxWidth: 200,
-                          fontSize: 13,
-                          color: "#718096",
-                        }}>
-                        {court.description}
-                      </td>
-                      <td>
-                        <span
-                          className={`status-badge ${court.type === "fixed" ? "confirmed" : "pending"}`}>
-                          {court.type === "fixed" ? (
-                            <StarIcon
-                              fontSize="small"
-                              sx={{ verticalAlign: "middle", mr: 0.5 }}
+                  {courts.map((court) => {
+                    const CourtIcon = getCourtIcon(court.image);
+                    return (
+                      <tr key={court._id}>
+                        <td>
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 10,
+                            }}>
+                            <CourtIcon
+                              sx={{ fontSize: 28, color: "#1a472a" }}
                             />
-                          ) : (
-                            <BoltIcon
-                              fontSize="small"
-                              sx={{ verticalAlign: "middle", mr: 0.5 }}
-                            />
-                          )}
-                          {court.type === "fixed" ? "Cố định" : "Vãng lai"}
-                        </span>
-                      </td>
-                      <td>
-                        <div style={{ fontWeight: 700, color: "#1a472a" }}>
-                          {formatCurrency(court.pricePerHour)}
-                        </div>
-                        <Button
-                          size="small"
-                          variant="text"
-                          sx={{
-                            fontSize: 11,
-                            p: 0,
-                            minWidth: 0,
-                            color: "#718096",
-                          }}
-                          onClick={() => openPrice(court)}>
-                          Sửa giá
-                        </Button>
-                      </td>
-                      <td>
-                        <FormControlLabel
-                          control={
-                            <Switch
-                              checked={court.isActive}
-                              onChange={() => handleToggleStatus(court)}
-                              size="small"
-                              color="success"
-                            />
-                          }
-                          label={
-                            <span
-                              style={{
-                                fontSize: 13,
-                                display: "inline-flex",
-                                alignItems: "center",
-                                gap: 4,
-                              }}>
-                              {court.isActive ? (
-                                <CheckCircleIcon
-                                  fontSize="small"
-                                  color="success"
-                                />
-                              ) : (
-                                <PauseCircleIcon
-                                  fontSize="small"
-                                  color="disabled"
-                                />
-                              )}
-                              {court.isActive ? "Hoạt động" : "Tạm ngưng"}
+                            <span style={{ fontWeight: 700, fontSize: 15 }}>
+                              {court.name}
                             </span>
-                          }
-                        />
-                      </td>
-                      <td style={{ fontSize: 12, color: "#718096" }}>
-                        {new Date(court.createdAt).toLocaleDateString("vi-VN")}
-                      </td>
-                      <td>
-                        <div style={{ display: "flex", gap: 4 }}>
-                          <IconButton
-                            size="small"
-                            onClick={() => openEdit(court)}
-                            color="primary">
-                            <EditIcon fontSize="small" />
-                          </IconButton>
-                          <IconButton
-                            size="small"
-                            onClick={() => setDeleteId(court._id)}
-                            color="error">
-                            <DeleteIcon fontSize="small" />
-                          </IconButton>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                          </div>
+                        </td>
+                        <td
+                          style={{
+                            maxWidth: 200,
+                            fontSize: 13,
+                            color: "#718096",
+                          }}>
+                          {court.description}
+                        </td>
+                        <td style={{ fontWeight: 700, color: "#b45309" }}>
+                          {formatCurrency(court.pricePerHourFixed ?? 0)}
+                        </td>
+                        <td style={{ fontWeight: 700, color: "#1e40af" }}>
+                          {formatCurrency(court.pricePerHourCasual ?? 0)}
+                        </td>
+                        <td>
+                          <FormControlLabel
+                            control={
+                              <Switch
+                                checked={court.isActive}
+                                onChange={() => handleToggleStatus(court)}
+                                size="small"
+                                color="success"
+                              />
+                            }
+                            label={
+                              <span
+                                style={{
+                                  fontSize: 13,
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: 4,
+                                }}>
+                                {court.isActive ? (
+                                  <CheckCircleIcon
+                                    fontSize="small"
+                                    color="success"
+                                  />
+                                ) : (
+                                  <PauseCircleIcon
+                                    fontSize="small"
+                                    color="disabled"
+                                  />
+                                )}
+                                {court.isActive ? "Hoạt động" : "Tạm ngưng"}
+                              </span>
+                            }
+                          />
+                        </td>
+                        <td style={{ fontSize: 12, color: "#718096" }}>
+                          {new Date(court.createdAt).toLocaleDateString(
+                            "vi-VN",
+                          )}
+                        </td>
+                        <td>
+                          <div style={{ display: "flex", gap: 4 }}>
+                            <IconButton
+                              size="small"
+                              onClick={() => openPrice(court)}
+                              color="warning"
+                              title="Sửa giá">
+                              <StarIcon fontSize="small" />
+                            </IconButton>
+                            <IconButton
+                              size="small"
+                              onClick={() => openEdit(court)}
+                              color="primary">
+                              <EditIcon fontSize="small" />
+                            </IconButton>
+                            <IconButton
+                              size="small"
+                              onClick={() => setDeleteId(court._id)}
+                              color="error">
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                   {courts.length === 0 && (
                     <tr>
                       <td
@@ -391,6 +396,7 @@ const ManageCourtsPage: React.FC = () => {
         </div>
       </div>
 
+      {/* Dialog Them/Sua san */}
       <Dialog
         open={dialogOpen}
         onClose={() => !saving && setDialogOpen(false)}
@@ -407,8 +413,9 @@ const ManageCourtsPage: React.FC = () => {
           {editingCourt ? "Chỉnh sửa sân" : "Thêm sân mới"}
         </DialogTitle>
         <DialogContent sx={{ pt: 2 }}>
-          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             {formError && <Alert severity="error">{formError}</Alert>}
+
             <TextField
               label="Tên sân *"
               value={form.name}
@@ -427,63 +434,86 @@ const ManageCourtsPage: React.FC = () => {
               multiline
               rows={2}
             />
+
+            <div>
+              <div
+                style={{
+                  fontSize: 12,
+                  fontWeight: 700,
+                  color: "#4a5568",
+                  marginBottom: 8,
+                }}>
+                Chọn icon hiển thị cho sân:
+              </div>
+              <ToggleButtonGroup
+                value={form.image}
+                exclusive
+                onChange={(_e, val) =>
+                  val && setForm((f) => ({ ...f, image: val }))
+                }
+                sx={{ flexWrap: "wrap", gap: 1 }}>
+                {COURT_ICON_OPTIONS.map(({ key, label, Icon }) => (
+                  <ToggleButton
+                    key={key}
+                    value={key}
+                    title={label}
+                    sx={{ borderRadius: 2, px: 1.5 }}>
+                    <Icon />
+                  </ToggleButton>
+                ))}
+              </ToggleButtonGroup>
+            </div>
+
+            <Alert severity="info" sx={{ py: 0.5 }}>
+              Mỗi sân có <strong>2 mức giá</strong> — khách sẽ chọn loại giá lúc
+              đặt sân, không cần tạo 2 sân riêng.
+            </Alert>
+
             <div style={{ display: "flex", gap: 12 }}>
               <TextField
-                select
-                label="Loại sân *"
-                value={form.type}
+                label="Giá cố định (đ/giờ) *"
+                type="number"
+                value={form.pricePerHourFixed}
                 onChange={(e) =>
-                  setForm((f) => ({ ...f, type: e.target.value as CourtType }))
+                  setForm((f) => ({
+                    ...f,
+                    pricePerHourFixed: Number(e.target.value),
+                  }))
                 }
                 size="small"
-                sx={{ flex: 1 }}>
-                <MenuItem value="fixed">
-                  <StarIcon
-                    fontSize="small"
-                    sx={{ verticalAlign: "middle", mr: 1 }}
-                  />
-                  Cố định
-                </MenuItem>
-                <MenuItem value="casual">
-                  <BoltIcon
-                    fontSize="small"
-                    sx={{ verticalAlign: "middle", mr: 1 }}
-                  />
-                  Vãng lai
-                </MenuItem>
-              </TextField>
+                fullWidth
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <StarIcon fontSize="small" color="warning" />
+                    </InputAdornment>
+                  ),
+                }}
+                slotProps={{ htmlInput: { min: 0, step: 10000 } }}
+              />
               <TextField
-                select
-                label="Icon"
-                value={form.image}
+                label="Giá vãng lai (đ/giờ) *"
+                type="number"
+                value={form.pricePerHourCasual}
                 onChange={(e) =>
-                  setForm((f) => ({ ...f, image: e.target.value }))
+                  setForm((f) => ({
+                    ...f,
+                    pricePerHourCasual: Number(e.target.value),
+                  }))
                 }
                 size="small"
-                sx={{ flex: 1 }}>
-                {ICONS.map((icon) => (
-                  <MenuItem key={icon} value={icon}>
-                    {icon}
-                  </MenuItem>
-                ))}
-              </TextField>
+                fullWidth
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <BoltIcon fontSize="small" color="info" />
+                    </InputAdornment>
+                  ),
+                }}
+                slotProps={{ htmlInput: { min: 0, step: 10000 } }}
+              />
             </div>
-            <TextField
-              label="Giá/giờ (đồng) *"
-              type="number"
-              value={form.pricePerHour}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, pricePerHour: Number(e.target.value) }))
-              }
-              size="small"
-              fullWidth
-              slotProps={{
-                htmlInput: {
-                  min: 0,
-                  step: 10000,
-                },
-              }}
-            />
+
             <FormControlLabel
               control={
                 <Switch
@@ -524,6 +554,7 @@ const ManageCourtsPage: React.FC = () => {
         </DialogActions>
       </Dialog>
 
+      {/* Dialog sua nhanh gia */}
       <Dialog
         open={priceDialog}
         onClose={() => !priceSaving && setPriceDialog(false)}
@@ -536,24 +567,49 @@ const ManageCourtsPage: React.FC = () => {
             alignItems: "center",
             gap: 1,
           }}>
-          <AttachMoneyIcon /> Điều chỉnh giá sân
+          <StarIcon /> Điều chỉnh giá sân
         </DialogTitle>
         <DialogContent>
-          <TextField
-            fullWidth
-            label="Giá mới (đồng/giờ)"
-            type="number"
-            value={newPrice}
-            onChange={(e) => setNewPrice(Number(e.target.value))}
-            size="small"
-            sx={{ mt: 1 }}
-            slotProps={{
-              htmlInput: {
-                min: 0,
-                step: 10000,
-              },
-            }}
-          />
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 14,
+              marginTop: 8,
+            }}>
+            <TextField
+              fullWidth
+              label="Giá cố định (đ/giờ)"
+              type="number"
+              value={newFixedPrice}
+              onChange={(e) => setNewFixedPrice(Number(e.target.value))}
+              size="small"
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <StarIcon fontSize="small" color="warning" />
+                  </InputAdornment>
+                ),
+              }}
+              slotProps={{ htmlInput: { min: 0, step: 10000 } }}
+            />
+            <TextField
+              fullWidth
+              label="Giá vãng lai (đ/giờ)"
+              type="number"
+              value={newCasualPrice}
+              onChange={(e) => setNewCasualPrice(Number(e.target.value))}
+              size="small"
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <BoltIcon fontSize="small" color="info" />
+                  </InputAdornment>
+                ),
+              }}
+              slotProps={{ htmlInput: { min: 0, step: 10000 } }}
+            />
+          </div>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 3 }}>
           <Button
@@ -576,6 +632,7 @@ const ManageCourtsPage: React.FC = () => {
         </DialogActions>
       </Dialog>
 
+      {/* Dialog xoa */}
       <Dialog
         open={!!deleteId}
         onClose={() => setDeleteId(null)}

@@ -1,12 +1,15 @@
 // src/pages/booking-flow/PaymentView.tsx
 import React, { useEffect, useRef, useState } from "react";
-import { Button, CircularProgress, Alert } from "@mui/material";
+import { Button, CircularProgress, Alert, Chip } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import QrCode2Icon from "@mui/icons-material/QrCode2";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import StarIcon from "@mui/icons-material/Star";
+import BoltIcon from "@mui/icons-material/Bolt";
+import dayjs from "dayjs";
 import { useBookingFlowStore } from "@/store/bookingFlowStore";
 import { useBookingStore } from "@/store/bookingStore";
-import { formatCurrency, formatDate } from "@/utils/helpers";
+import { formatCurrency } from "@/utils/helpers";
 import { buildVietQrUrl } from "@/config/payment";
 
 interface Props {
@@ -18,43 +21,39 @@ const PaymentView: React.FC<Props> = ({ onDone }) => {
     selectedCourt,
     selectedDate,
     selectedSlots,
-    selectedDuration,
+    bookingType,
     notes,
     createdBooking,
     setCreatedBooking,
     goToCatalog,
     reset,
   } = useBookingFlowStore();
-  const { createBooking, createFixedBooking } = useBookingStore();
+  const { createBooking } = useBookingStore();
 
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState("");
   const hasCreatedRef = useRef(false);
 
   useEffect(() => {
-    if (createdBooking || hasCreatedRef.current || !selectedCourt) return;
+    if (
+      createdBooking ||
+      hasCreatedRef.current ||
+      !selectedCourt ||
+      !bookingType
+    )
+      return;
     hasCreatedRef.current = true;
 
     const create = async () => {
       setCreating(true);
       setError("");
-      const result =
-        selectedCourt.type === "fixed"
-          ? selectedDuration
-            ? await createFixedBooking({
-                courtId: selectedCourt._id,
-                startDate: selectedDate,
-                slots: selectedSlots,
-                durationMonths: selectedDuration.months,
-                notes,
-              })
-            : { success: false, message: "Thiếu thông tin gói thời hạn!" }
-          : await createBooking({
-              courtId: selectedCourt._id,
-              date: selectedDate,
-              slots: selectedSlots,
-              notes,
-            });
+      const result = await createBooking({
+        courtId: selectedCourt._id,
+        date: selectedDate,
+        slots: selectedSlots,
+        bookingType,
+        notes,
+      });
 
       setCreating(false);
       if (result.success && result.booking) {
@@ -66,7 +65,7 @@ const PaymentView: React.FC<Props> = ({ onDone }) => {
     };
 
     create();
-  }, []);
+  }, []); // eslint-disable-line
 
   if (creating) {
     return (
@@ -137,33 +136,49 @@ const PaymentView: React.FC<Props> = ({ onDone }) => {
                 </span>
               </div>
               <div className="summary-row">
-                <span className="summary-label">Loại sân</span>
+                <span className="summary-label">Loại giá</span>
                 <span className="summary-value">
-                  {createdBooking.courtType === "fixed"
-                    ? "Cố định"
-                    : "Vãng lai"}
+                  <Chip
+                    size="small"
+                    icon={
+                      createdBooking.bookingType === "fixed" ? (
+                        <StarIcon />
+                      ) : (
+                        <BoltIcon />
+                      )
+                    }
+                    label={
+                      createdBooking.bookingType === "fixed"
+                        ? "Cố định"
+                        : "Vãng lai"
+                    }
+                    color={
+                      createdBooking.bookingType === "fixed"
+                        ? "warning"
+                        : "info"
+                    }
+                  />
                 </span>
               </div>
               <div className="summary-row">
                 <span className="summary-label">Ngày</span>
                 <span className="summary-value">
-                  {formatDate(createdBooking.date)}
+                  {dayjs(createdBooking.date).format("DD/MM/YYYY")}
                 </span>
               </div>
               <div className="summary-row">
                 <span className="summary-label">Khung giờ</span>
                 <span className="summary-value">
-                  {createdBooking.startTime} – {createdBooking.endTime}
+                  {createdBooking.startTime} – {createdBooking.endTime} (
+                  {createdBooking.hours}h)
                 </span>
               </div>
-              {createdBooking.bookingType === "fixed" && (
-                <div className="summary-row">
-                  <span className="summary-label">Thời hạn gói</span>
-                  <span className="summary-value">
-                    {createdBooking.durationMonths} tháng
-                  </span>
-                </div>
-              )}
+              <div className="summary-row">
+                <span className="summary-label">Đơn giá</span>
+                <span className="summary-value">
+                  {formatCurrency(createdBooking.pricePerHour)}/giờ
+                </span>
+              </div>
               <div className="summary-row total">
                 <span className="summary-label">Số tiền cần thanh toán</span>
                 <span className="summary-value">

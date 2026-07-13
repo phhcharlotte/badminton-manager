@@ -1,24 +1,29 @@
 import { create } from "zustand";
 import { Court } from "@/types/Courts";
-import { Booking } from "@/types/Booking";
-import { FixedDurationOption } from "@/apis/booking.api";
+import { Booking, BookingType } from "@/types/Booking";
 
-export type BookingFlowView = "catalog" | "detail" | "payment" | "done";
+export type BookingFlowView =
+  | "intro"
+  | "catalog"
+  | "detail"
+  | "payment"
+  | "done";
 
 interface BookingFlowStore {
   view: BookingFlowView;
   selectedCourt: Court | null;
   selectedDate: string;
   selectedSlots: string[];
-  selectedDuration: FixedDurationOption | null;
+  bookingType: BookingType | null;
   notes: string;
   createdBooking: Booking | null;
 
+  goToIntro: () => void;
   goToCatalog: () => void;
   selectCourt: (court: Court) => void;
   setSelectedDate: (date: string) => void;
   setSelectedSlots: (slots: string[]) => void;
-  setSelectedDuration: (d: FixedDurationOption | null) => void;
+  setBookingType: (t: BookingType | null) => void;
   setNotes: (notes: string) => void;
   goToPayment: () => void;
   setCreatedBooking: (b: Booking) => void;
@@ -28,14 +33,15 @@ interface BookingFlowStore {
 const todayStr = () => new Date().toISOString().slice(0, 10);
 
 export const useBookingFlowStore = create<BookingFlowStore>((set) => ({
-  view: "catalog",
+  view: "intro",
   selectedCourt: null,
   selectedDate: todayStr(),
   selectedSlots: [],
-  selectedDuration: null,
+  bookingType: null,
   notes: "",
   createdBooking: null,
 
+  goToIntro: () => set({ view: "intro" }),
   goToCatalog: () => set({ view: "catalog" }),
   selectCourt: (court) =>
     set({
@@ -43,21 +49,21 @@ export const useBookingFlowStore = create<BookingFlowStore>((set) => ({
       selectedCourt: court,
       selectedDate: todayStr(),
       selectedSlots: [],
-      selectedDuration: null,
+      bookingType: null,
     }),
   setSelectedDate: (date) => set({ selectedDate: date, selectedSlots: [] }),
   setSelectedSlots: (slots) => set({ selectedSlots: slots }),
-  setSelectedDuration: (d) => set({ selectedDuration: d }),
+  setBookingType: (t) => set({ bookingType: t }),
   setNotes: (notes) => set({ notes }),
   goToPayment: () => set({ view: "payment" }),
   setCreatedBooking: (b) => set({ createdBooking: b, view: "done" }),
   reset: () =>
     set({
-      view: "catalog",
+      view: "intro",
       selectedCourt: null,
       selectedDate: todayStr(),
       selectedSlots: [],
-      selectedDuration: null,
+      bookingType: null,
       notes: "",
       createdBooking: null,
     }),

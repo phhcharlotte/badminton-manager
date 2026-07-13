@@ -4,15 +4,14 @@ export interface Court {
   _id: string;
   name: string;
   description: string;
-  type: CourtType;
-  pricePerHour: number;
-  image: string;
+  pricePerHourFixed: number;
+  pricePerHourCasual: number;
+  image: string; // key icon MUI, xem src/config/courtIcons.tsx
   isActive: boolean;
   createdAt: string;
 }
 
 export interface ListCourtsParams {
-  type?: CourtType;
   search?: string;
   page?: number;
   limit?: number;
@@ -23,8 +22,8 @@ export interface ListCourtsParams {
 export interface CourtFormPayload {
   name: string;
   description?: string;
-  type: CourtType;
-  pricePerHour: number;
+  pricePerHourFixed: number;
+  pricePerHourCasual: number;
   image?: string;
   isActive?: boolean;
 }

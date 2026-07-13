@@ -131,7 +131,9 @@ export const renderPageComponent = (
         }
       />
     ),
-    booking: <BookingFlowPage />,
+    booking: (
+      <BookingFlowPage skipIntro onCompleted={() => navigate("history")} />
+    ),
     history: <HistoryPage />,
     "manage-bookings": <ManageBookingsPage />,
     "manage-courts": <ManageCourtsPage />,

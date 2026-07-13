@@ -1,11 +1,10 @@
 import { create } from "zustand";
-import { Court, CourtType } from "@/types/Courts";
+import { Court, CourtFormPayload, ListCourtsParams } from "@/types/Courts";
 import {
   listCourtsApi,
   createCourtApi,
   updateCourtApi,
   deleteCourtApi,
-  CourtFormPayload,
 } from "@/apis/court.api";
 
 interface CourtStore {
@@ -13,11 +12,7 @@ interface CourtStore {
   isLoading: boolean;
   error: string | null;
 
-  fetchCourts: (params?: {
-    type?: CourtType;
-    search?: string;
-    isActive?: boolean;
-  }) => Promise<void>;
+  fetchCourts: (params?: ListCourtsParams) => Promise<void>;
   addCourt: (
     payload: CourtFormPayload,
   ) => Promise<{ success: boolean; message: string }>;

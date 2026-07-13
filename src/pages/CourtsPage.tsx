@@ -139,14 +139,6 @@ const CourtsPage: React.FC<Props> = ({
             border: "1px solid #3b82f6",
           }}>
           <BoltIcon sx={{ fontSize: 28, color: "#1e40af" }} />
-          <div>
-            <div style={{ fontWeight: 800, color: "#1e40af" }}>
-              Sân vãng lai (Đặt từng lần)
-            </div>
-            <div style={{ fontSize: 13, color: "#2563eb" }}>
-              Linh hoạt, phù hợp mọi đối tượng
-            </div>
-          </div>
         </div>
       </div>
 
@@ -172,7 +164,7 @@ const CourtsPage: React.FC<Props> = ({
                 onClick={() => onSelectCourt && onSelectCourt(court)}>
                 <div className="court-card-image">
                   {court.image}
-                  <div className={`court-type-badge ${court.type}`}>
+                  {/* <div className={`court-type-badge ${court.type}`}>
                     {court.type === "fixed" ? (
                       <StarIcon
                         fontSize="small"
@@ -185,7 +177,7 @@ const CourtsPage: React.FC<Props> = ({
                       />
                     )}
                     {court.type === "fixed" ? "Cố định" : "Vãng lai"}
-                  </div>
+                  </div> */}
                 </div>
                 <div className="court-card-body">
                   <div className="court-name">{court.name}</div>

@@ -30,7 +30,7 @@ import { useAuthStore } from "@/store/authStore";
 import { User, UserRole } from "@/types";
 import NotificationSnackbar from "@/components/shared/NotificationSnackbar";
 import { useNotification } from "@/hooks/useNotification";
-import { AVATAR_COLORS } from "@/constants/manage";
+import { AVATAR_COLORS } from "@/config/manage";
 
 interface ManagerForm {
   fullName: string;

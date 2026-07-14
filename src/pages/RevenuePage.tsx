@@ -20,7 +20,7 @@ import {
   RevenueReport,
   RevenueSummary,
 } from "@/types/Revenue";
-import { GROUP_BY_OPTIONS } from "@/constants/revenue";
+import { GROUP_BY_OPTIONS } from "@/config/revenue";
 
 const RevenuePage: React.FC = () => {
   const { courts, fetchCourts } = useCourtStore();

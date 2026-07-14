@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { Suspense, useState } from "react";
 import { Button } from "@mui/material";
 import SportsTennisIcon from "@mui/icons-material/SportsTennis";
 import LoginIcon from "@mui/icons-material/Login";
@@ -41,7 +41,12 @@ const PublicBookingLanding: React.FC = () => {
       </div>
 
       <div style={{ padding: "24px 32px", maxWidth: 1200, margin: "0 auto" }}>
-        <BookingFlowPage />
+        <Suspense
+          fallback={
+            <div style={{ textAlign: "center", padding: 60 }}>Đang tải...</div>
+          }>
+          <BookingFlowPage />
+        </Suspense>
       </div>
 
       <LoginPromptDialog open={loginOpen} onClose={() => setLoginOpen(false)} />

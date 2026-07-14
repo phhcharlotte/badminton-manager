@@ -1,5 +1,5 @@
 // src/App.tsx
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, Suspense } from "react";
 import { ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import { useAuthStore } from "@/store/authStore";
@@ -30,7 +30,7 @@ const App: React.FC = () => {
   const { isAuthenticated, currentUser, isLoading, initAuth } = useAuthStore();
   const [activePage, setActivePage] = useState<PageKey | "">("");
   const [sidebarOpen, setSidebarOpen] = useState(false);
-
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const wasAuthenticated = useRef(isAuthenticated);
 
   useEffect(() => {
@@ -65,6 +65,7 @@ const App: React.FC = () => {
   // Close sidebar on resize to desktop
   useEffect(() => {
     const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
       if (window.innerWidth > 768) setSidebarOpen(false);
     };
     window.addEventListener("resize", handleResize);
@@ -113,6 +114,21 @@ const App: React.FC = () => {
     );
   };
 
+  const PageLoadingFallback: React.FC = () => (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        minHeight: "60vh",
+        color: "#1a472a",
+        fontWeight: 700,
+        fontFamily: "'Nunito', sans-serif",
+      }}>
+      Đang tải trang...
+    </div>
+  );
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
@@ -125,12 +141,16 @@ const App: React.FC = () => {
           onMobileClose={() => setSidebarOpen(false)}
         />
 
-        <MobileNavbar
-          onMenuClick={() => setSidebarOpen(true)}
-          pageTitle={activePage}
-        />
+        {isMobile && (
+          <MobileNavbar
+            onMenuClick={() => setSidebarOpen(true)}
+            pageTitle={activePage}
+          />
+        )}
 
-        <main className="main-content">{renderPage()}</main>
+        <main className="main-content">
+          <Suspense fallback={<PageLoadingFallback />}>{renderPage()}</Suspense>
+        </main>
       </div>
     </ThemeProvider>
   );

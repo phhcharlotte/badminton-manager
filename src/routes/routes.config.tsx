@@ -1,16 +1,6 @@
 // src/routes/routes.config.tsx
-import React from "react";
+import React, { lazy } from "react";
 import { UserRole } from "@/types";
-
-import DashboardPage from "@/pages/DashboardPage";
-import CourtsPage from "@/pages/CourtsPage";
-import BookingFlowPage from "@/pages/BookingFlowPage";
-import HistoryPage from "@/pages/HistoryPage";
-import ManageBookingsPage from "@/pages/ManageBookingsPage";
-import ManageCourtsPage from "@/pages/ManageCourtsPage";
-import ManageUsersPage from "@/pages/ManageUsersPage";
-import ProfilePage from "@/pages/ProfilePage";
-import RevenuePage from "@/pages/RevenuePage";
 
 import DashboardIcon from "@mui/icons-material/DashboardOutlined";
 import SportsTennisIcon from "@mui/icons-material/SportsTennisOutlined";
@@ -22,6 +12,16 @@ import PeopleAltIcon from "@mui/icons-material/PeopleAltOutlined";
 import PaidIcon from "@mui/icons-material/PaidOutlined";
 import PersonOutlineIcon from "@mui/icons-material/PersonOutlineOutlined";
 import { SvgIconComponent } from "@mui/icons-material";
+
+const DashboardPage = lazy(() => import("@/pages/DashboardPage"));
+const CourtsPage = lazy(() => import("@/pages/CourtsPage"));
+const BookingFlowPage = lazy(() => import("@/pages/BookingFlowPage"));
+const HistoryPage = lazy(() => import("@/pages/HistoryPage"));
+const ManageBookingsPage = lazy(() => import("@/pages/ManageBookingsPage"));
+const ManageCourtsPage = lazy(() => import("@/pages/ManageCourtsPage"));
+const ManageUsersPage = lazy(() => import("@/pages/ManageUsersPage"));
+const ProfilePage = lazy(() => import("@/pages/ProfilePage"));
+const RevenuePage = lazy(() => import("@/pages/RevenuePage"));
 
 export type PageKey =
   | "dashboard"

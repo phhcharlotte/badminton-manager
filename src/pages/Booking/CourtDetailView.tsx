@@ -1,5 +1,5 @@
 // src/pages/booking-flow/CourtDetailView.tsx
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { Button, Alert, Chip, CircularProgress } from "@mui/material";
 import { DateCalendar } from "@mui/x-date-pickers/DateCalendar";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
@@ -20,9 +20,32 @@ import {
   buildTimeRange,
 } from "@/utils/helpers";
 import { TIME_SLOTS, BookingType } from "@/types/Booking";
+import { PriceRule } from "@/types/Courts";
 import LoginPromptDialog from "@/components/auth/LoginPromptDialog";
 import { useNotification } from "@/hooks/useNotification";
 import NotificationSnackbar from "@/components/shared/NotificationSnackbar";
+
+const toMinutes = (t: string): number => {
+  const [h, m] = t.split(":").map(Number);
+  return h * 60 + m;
+};
+
+// Tra gia cho 1 khung gio theo bang gia cua loai san + loai dat da chon (chi de PREVIEW,
+// gia chinh thuc luon do BE tinh lai va xac nhan luc tao don)
+const getPreviewPrice = (
+  slot: string,
+  rules: PriceRule[],
+  type: BookingType,
+): number | null => {
+  const slotMin = toMinutes(slot);
+  const rule = rules.find((r) => {
+    const startMin = toMinutes(r.startTime);
+    const endMin = r.endTime === "24:00" ? 24 * 60 : toMinutes(r.endTime);
+    return slotMin >= startMin && slotMin < endMin;
+  });
+  if (!rule) return null;
+  return type === "fixed" ? rule.pricePerHourFixed : rule.pricePerHourCasual;
+};
 
 const CourtDetailView: React.FC = () => {
   const { isAuthenticated } = useAuthStore();
@@ -110,6 +133,7 @@ const CourtDetailView: React.FC = () => {
   }
 
   const CourtIcon = getCourtIcon(selectedCourt.image);
+  const priceRules = selectedCourt.category?.priceRules || [];
 
   const isPastSlot = (time: string): boolean => {
     if (selectedDate > todayStr) return false;
@@ -141,15 +165,23 @@ const CourtDetailView: React.FC = () => {
   } = buildTimeRange(selectedSlots);
   const isContiguous = areConsecutive(selectedSlots);
 
-  const currentPricePerHour =
-    bookingType === "fixed"
-      ? selectedCourt.pricePerHourFixed
-      : bookingType === "casual"
-        ? selectedCourt.pricePerHourCasual
-        : null;
-  const totalPrice = currentPricePerHour ? hours * currentPricePerHour : 0;
+  // Preview tong tien theo tung khung gio + loai gia da chon
+  const previewTotal = useMemo(() => {
+    if (!bookingType || selectedSlots.length === 0) return null;
+    let sum = 0;
+    for (const slot of selectedSlots) {
+      const price = getPreviewPrice(slot, priceRules, bookingType);
+      if (price === null) return null; // co khung gio chua duoc cai gia
+      sum += price;
+    }
+    return sum;
+  }, [bookingType, selectedSlots, priceRules]);
 
-  const canContinue = selectedSlots.length > 0 && isContiguous && !!bookingType;
+  const canContinue =
+    selectedSlots.length > 0 &&
+    isContiguous &&
+    !!bookingType &&
+    previewTotal !== null;
 
   const handleContinue = () => {
     if (!canContinue) return;
@@ -190,21 +222,55 @@ const CourtDetailView: React.FC = () => {
             <div style={{ fontSize: 13, color: "#718096" }}>
               {selectedCourt.description}
             </div>
-            <div style={{ display: "flex", gap: 10, marginTop: 6 }}>
-              <Chip
-                icon={<StarIcon />}
-                label={`Cố định: ${formatCurrency(selectedCourt.pricePerHourFixed)}/giờ`}
-                size="small"
-                color="warning"
-                variant="outlined"
-              />
-              <Chip
-                icon={<BoltIcon />}
-                label={`Vãng lai: ${formatCurrency(selectedCourt.pricePerHourCasual)}/giờ`}
-                size="small"
-                color="info"
-                variant="outlined"
-              />
+            <Chip
+              label={selectedCourt.category?.name}
+              size="small"
+              color="success"
+              variant="outlined"
+              sx={{ mt: 0.5 }}
+            />
+          </div>
+        </div>
+
+        {/* Bang gia loai san nay */}
+        <div className="card" style={{ marginBottom: 20 }}>
+          <div className="card-header">
+            Bảng giá — {selectedCourt.category?.name}
+          </div>
+          <div className="card-body">
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+              {priceRules.map((r, i) => (
+                <div
+                  key={i}
+                  style={{
+                    background: "#f8faf9",
+                    borderRadius: 8,
+                    padding: "8px 12px",
+                    fontSize: 13,
+                  }}>
+                  <strong>
+                    {r.startTime}–{r.endTime}
+                  </strong>
+                  {" — "}
+                  <StarIcon
+                    sx={{
+                      fontSize: 13,
+                      color: "#b45309",
+                      verticalAlign: "middle",
+                    }}
+                  />{" "}
+                  {formatCurrency(r.pricePerHourFixed)}
+                  {" / "}
+                  <BoltIcon
+                    sx={{
+                      fontSize: 13,
+                      color: "#1e40af",
+                      verticalAlign: "middle",
+                    }}
+                  />{" "}
+                  {formatCurrency(r.pricePerHourCasual)}
+                </div>
+              ))}
             </div>
           </div>
         </div>
@@ -246,6 +312,59 @@ const CourtDetailView: React.FC = () => {
                 textAlign: "center",
               }}>
               {dateObj.format("dddd, DD/MM/YYYY")}
+            </div>
+
+            {/* Chon loai gia */}
+            <div style={{ margin: "0 16px 16px" }}>
+              <div
+                style={{
+                  fontSize: 12,
+                  fontWeight: 700,
+                  color: "#4a5568",
+                  marginBottom: 8,
+                }}>
+                Chọn loại giá:
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                <div
+                  onClick={() => setBookingType("fixed" as BookingType)}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    padding: "10px 12px",
+                    borderRadius: 8,
+                    cursor: "pointer",
+                    border:
+                      bookingType === "fixed"
+                        ? "2px solid #b45309"
+                        : "1px solid #e5e7eb",
+                    background: bookingType === "fixed" ? "#fef3c7" : "white",
+                  }}>
+                  <StarIcon sx={{ color: "#b45309" }} fontSize="small" />
+                  <span style={{ fontWeight: 700, fontSize: 13 }}>Cố định</span>
+                </div>
+                <div
+                  onClick={() => setBookingType("casual" as BookingType)}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    padding: "10px 12px",
+                    borderRadius: 8,
+                    cursor: "pointer",
+                    border:
+                      bookingType === "casual"
+                        ? "2px solid #1e40af"
+                        : "1px solid #e5e7eb",
+                    background: bookingType === "casual" ? "#dbeafe" : "white",
+                  }}>
+                  <BoltIcon sx={{ color: "#1e40af" }} fontSize="small" />
+                  <span style={{ fontWeight: 700, fontSize: 13 }}>
+                    Vãng lai
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -294,6 +413,14 @@ const CourtDetailView: React.FC = () => {
                   Vui lòng chọn các khung giờ <strong>liên tiếp nhau</strong>!
                 </Alert>
               )}
+              {selectedSlots.length > 0 &&
+                bookingType &&
+                previewTotal === null && (
+                  <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>
+                    Một số khung giờ đã chọn chưa được thiết lập giá. Vui lòng
+                    chọn khung giờ khác.
+                  </Alert>
+                )}
 
               <div className="slots-grid">
                 {TIME_SLOTS.map((time) => {
@@ -318,79 +445,6 @@ const CourtDetailView: React.FC = () => {
                   );
                 })}
               </div>
-
-              {/* Chon loai gia - CHI hien sau khi da chon it nhat 1 khung gio hop le */}
-              {selectedSlots.length > 0 && isContiguous && (
-                <div style={{ marginTop: 20 }}>
-                  <div
-                    style={{
-                      fontSize: 13,
-                      fontWeight: 700,
-                      color: "#4a5568",
-                      marginBottom: 10,
-                    }}>
-                    Chọn loại giá cho lượt đặt này:
-                  </div>
-                  <div style={{ display: "flex", gap: 12 }}>
-                    <div
-                      onClick={() => setBookingType("fixed" as BookingType)}
-                      style={{
-                        flex: 1,
-                        padding: "14px 16px",
-                        borderRadius: 12,
-                        cursor: "pointer",
-                        border:
-                          bookingType === "fixed"
-                            ? "2px solid #b45309"
-                            : "1px solid #e5e7eb",
-                        background:
-                          bookingType === "fixed" ? "#fef3c7" : "white",
-                      }}>
-                      <StarIcon sx={{ color: "#b45309" }} />
-                      <div
-                        style={{ fontWeight: 800, fontSize: 14, marginTop: 4 }}>
-                        Cố định
-                      </div>
-                      <div
-                        style={{
-                          fontSize: 13,
-                          color: "#b45309",
-                          fontWeight: 700,
-                        }}>
-                        {formatCurrency(selectedCourt.pricePerHourFixed)}/giờ
-                      </div>
-                    </div>
-                    <div
-                      onClick={() => setBookingType("casual" as BookingType)}
-                      style={{
-                        flex: 1,
-                        padding: "14px 16px",
-                        borderRadius: 12,
-                        cursor: "pointer",
-                        border:
-                          bookingType === "casual"
-                            ? "2px solid #1e40af"
-                            : "1px solid #e5e7eb",
-                        background:
-                          bookingType === "casual" ? "#dbeafe" : "white",
-                      }}>
-                      <BoltIcon sx={{ color: "#1e40af" }} />
-                      <div
-                        style={{ fontWeight: 800, fontSize: 14, marginTop: 4 }}>
-                        Vãng lai
-                      </div>
-                      <div
-                        style={{
-                          fontSize: 13,
-                          color: "#1e40af",
-                          fontWeight: 700,
-                        }}>
-                        {formatCurrency(selectedCourt.pricePerHourCasual)}/giờ
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         </div>
@@ -426,7 +480,7 @@ const CourtDetailView: React.FC = () => {
                 <div style={{ fontSize: 11, color: "#718096" }}>Tổng tiền</div>
                 <div
                   style={{ fontWeight: 800, fontSize: 18, color: "#1a472a" }}>
-                  {formatCurrency(totalPrice)}
+                  {formatCurrency(previewTotal!)}
                 </div>
               </div>
             </div>

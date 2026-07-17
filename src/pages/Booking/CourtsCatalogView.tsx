@@ -2,33 +2,30 @@
 import React, { useEffect, useState } from "react";
 import {
   TextField,
-  MenuItem,
   InputAdornment,
   CircularProgress,
   Alert,
+  Chip,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import StadiumIcon from "@mui/icons-material/Stadium";
+import SearchOffIcon from "@mui/icons-material/SearchOff";
+import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import StarIcon from "@mui/icons-material/Star";
 import BoltIcon from "@mui/icons-material/Bolt";
-import SearchOffIcon from "@mui/icons-material/SearchOff";
-
-import { getCourtIcon } from "@/config/courtIcons";
-
 import { useCourtStore } from "@/store/courtStore";
 import { useBookingFlowStore } from "@/store/bookingFlowStore";
-import { CourtType } from "@/types/Courts";
 import { formatCurrency } from "@/utils/helpers";
+import { getCourtIcon } from "@/config/courtIcons";
 
 const CourtsCatalogView: React.FC = () => {
-  const { courts, isLoading, error } = useCourtStore();
+  const { courts, isLoading, error, fetchCourts } = useCourtStore();
   const selectCourt = useBookingFlowStore((s) => s.selectCourt);
   const [search, setSearch] = useState("");
-  const [typeFilter, setTypeFilter] = useState<"all" | CourtType>("all");
 
-  // useEffect(() => {
-  //   fetchCourts(typeFilter === "all" ? undefined : { type: typeFilter });
-  // }, [typeFilter]);
+  useEffect(() => {
+    fetchCourts();
+  }, []); // eslint-disable-line
 
   const filtered = courts.filter((c) => {
     const keyword = search.toLowerCase();
@@ -56,40 +53,15 @@ const CourtsCatalogView: React.FC = () => {
           placeholder="Tìm kiếm sân..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          slotProps={{
-            input: {
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon fontSize="small" />
-                </InputAdornment>
-              ),
-            },
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon fontSize="small" />
+              </InputAdornment>
+            ),
           }}
           sx={{ minWidth: 220 }}
         />
-        <TextField
-          select
-          size="small"
-          label="Loại sân"
-          value={typeFilter}
-          onChange={(e) => setTypeFilter(e.target.value as "all" | CourtType)}
-          sx={{ minWidth: 140 }}>
-          <MenuItem value="all">Tất cả</MenuItem>
-          <MenuItem value="fixed">
-            <StarIcon
-              fontSize="small"
-              sx={{ verticalAlign: "middle", mr: 1 }}
-            />
-            Cố định
-          </MenuItem>
-          <MenuItem value="casual">
-            <BoltIcon
-              fontSize="small"
-              sx={{ verticalAlign: "middle", mr: 1 }}
-            />
-            Vãng lai
-          </MenuItem>
-        </TextField>
         <div style={{ flex: 1 }} />
         <span style={{ fontSize: 13, color: "#718096" }}>
           {isLoading ? "Đang tải..." : `${filtered.length} sân`}
@@ -129,64 +101,53 @@ const CourtsCatalogView: React.FC = () => {
                   <div className="court-card-body">
                     <div className="court-name">{court.name}</div>
                     <div className="court-desc">{court.description}</div>
-                    <div style={{ display: "flex", gap: 12, marginTop: 10 }}>
-                      <div
-                        style={{
-                          flex: 1,
-                          background: "#fef3c7",
-                          borderRadius: 8,
-                          padding: "6px 10px",
-                          textAlign: "center",
-                        }}>
+
+                    <Chip
+                      label={court.category?.name}
+                      size="small"
+                      color="success"
+                      variant="outlined"
+                      sx={{ mt: 1 }}
+                    />
+
+                    <div
+                      style={{
+                        marginTop: 10,
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 4,
+                      }}>
+                      {court.category?.priceRules.slice(0, 2).map((r, i) => (
                         <div
+                          key={i}
                           style={{
                             fontSize: 11,
-                            color: "#b45309",
-                            fontWeight: 700,
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 6,
+                            color: "#718096",
                           }}>
+                          <AccessTimeIcon sx={{ fontSize: 12 }} /> {r.startTime}
+                          –{r.endTime}
                           <StarIcon
-                            sx={{ fontSize: 13, verticalAlign: "middle" }}
+                            sx={{ fontSize: 12, color: "#b45309" }}
                           />{" "}
-                          Cố định
-                        </div>
-                        <div
-                          style={{
-                            fontSize: 14,
-                            fontWeight: 800,
-                            color: "#b45309",
-                          }}>
-                          {formatCurrency(court.pricePerHourFixed)}
-                        </div>
-                      </div>
-                      <div
-                        style={{
-                          flex: 1,
-                          background: "#dbeafe",
-                          borderRadius: 8,
-                          padding: "6px 10px",
-                          textAlign: "center",
-                        }}>
-                        <div
-                          style={{
-                            fontSize: 11,
-                            color: "#1e40af",
-                            fontWeight: 700,
-                          }}>
+                          {formatCurrency(r.pricePerHourFixed)}
                           <BoltIcon
-                            sx={{ fontSize: 13, verticalAlign: "middle" }}
+                            sx={{ fontSize: 12, color: "#1e40af" }}
                           />{" "}
-                          Vãng lai
+                          {formatCurrency(r.pricePerHourCasual)}
                         </div>
-                        <div
-                          style={{
-                            fontSize: 14,
-                            fontWeight: 800,
-                            color: "#1e40af",
-                          }}>
-                          {formatCurrency(court.pricePerHourCasual)}
-                        </div>
-                      </div>
+                      ))}
+                      {court.category &&
+                        court.category.priceRules.length > 2 && (
+                          <span style={{ fontSize: 11, color: "#94a3b8" }}>
+                            +{court.category.priceRules.length - 2} khung giờ
+                            khác
+                          </span>
+                        )}
                     </div>
+
                     <button
                       style={{
                         marginTop: 14,
@@ -207,6 +168,7 @@ const CourtsCatalogView: React.FC = () => {
               );
             })}
           </div>
+
           {filtered.length === 0 && (
             <div
               style={{
@@ -218,6 +180,7 @@ const CourtsCatalogView: React.FC = () => {
               <div style={{ fontSize: 18, fontWeight: 700 }}>
                 Không tìm thấy sân nào
               </div>
+              <div style={{ fontSize: 14 }}>Thử thay đổi từ khoá tìm kiếm</div>
             </div>
           )}
         </>

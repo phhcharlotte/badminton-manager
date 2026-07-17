@@ -5,17 +5,20 @@ import {
   InputAdornment,
   CircularProgress,
   Alert,
+  Chip,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import SearchOffIcon from "@mui/icons-material/SearchOff";
 import StadiumIcon from "@mui/icons-material/Stadium";
 import StarIcon from "@mui/icons-material/Star";
 import BoltIcon from "@mui/icons-material/Bolt";
-import EventNoteIcon from "@mui/icons-material/EventNote";
+import AccessTimeIcon from "@mui/icons-material/AccessTime";
+
 import { useCourtStore } from "@/store/courtStore";
 import { Court } from "@/types/Courts/index";
 import { formatCurrency } from "@/utils/helpers";
 import { getCourtIcon } from "@/config/courtIcons";
+import { useBookingFlowStore } from "@/store/bookingFlowStore";
 
 interface Props {
   onSelectCourt?: (court: Court) => void;
@@ -27,6 +30,8 @@ const CourtsPage: React.FC<Props> = ({
   showBookingButton = false,
 }) => {
   const { courts, isLoading, error, fetchCourts } = useCourtStore();
+  const selectCourt = useBookingFlowStore((s) => s.selectCourt);
+
   const [search, setSearch] = useState("");
 
   useEffect(() => {
@@ -146,8 +151,8 @@ const CourtsPage: React.FC<Props> = ({
                 <div
                   key={court._id}
                   className="court-card"
-                  onClick={() => onSelectCourt && onSelectCourt(court)}
-                  style={{ cursor: onSelectCourt ? "pointer" : "default" }}>
+                  onClick={() => selectCourt(court)}
+                  style={{ cursor: "pointer" }}>
                   <div
                     className="court-card-image"
                     style={{
@@ -161,86 +166,59 @@ const CourtsPage: React.FC<Props> = ({
                     <div className="court-name">{court.name}</div>
                     <div className="court-desc">{court.description}</div>
 
-                    <div style={{ display: "flex", gap: 12, marginTop: 10 }}>
-                      <div
-                        style={{
-                          flex: 1,
-                          background: "#fef3c7",
-                          borderRadius: 8,
-                          padding: "6px 10px",
-                          textAlign: "center",
-                        }}>
+                    <Chip
+                      label={court.category?.name}
+                      size="small"
+                      color="success"
+                      variant="outlined"
+                      sx={{ mt: 1 }}
+                    />
+                    <div
+                      style={{
+                        marginTop: 10,
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 4,
+                      }}>
+                      {court.category?.priceRules.map((r, i) => (
                         <div
+                          key={i}
                           style={{
                             fontSize: 11,
-                            color: "#b45309",
-                            fontWeight: 700,
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 6,
+                            color: "#718096",
                           }}>
+                          <AccessTimeIcon sx={{ fontSize: 12 }} /> {r.startTime}
+                          –{r.endTime}
                           <StarIcon
-                            sx={{ fontSize: 13, verticalAlign: "middle" }}
+                            sx={{ fontSize: 12, color: "#b45309" }}
                           />{" "}
-                          Cố định
-                        </div>
-                        <div
-                          style={{
-                            fontSize: 14,
-                            fontWeight: 800,
-                            color: "#b45309",
-                          }}>
-                          {formatCurrency(court.pricePerHourFixed)}
-                        </div>
-                      </div>
-                      <div
-                        style={{
-                          flex: 1,
-                          background: "#dbeafe",
-                          borderRadius: 8,
-                          padding: "6px 10px",
-                          textAlign: "center",
-                        }}>
-                        <div
-                          style={{
-                            fontSize: 11,
-                            color: "#1e40af",
-                            fontWeight: 700,
-                          }}>
+                          {formatCurrency(r.pricePerHourFixed)}
                           <BoltIcon
-                            sx={{ fontSize: 13, verticalAlign: "middle" }}
+                            sx={{ fontSize: 12, color: "#1e40af" }}
                           />{" "}
-                          Vãng lai
+                          {formatCurrency(r.pricePerHourCasual)}
                         </div>
-                        <div
-                          style={{
-                            fontSize: 14,
-                            fontWeight: 800,
-                            color: "#1e40af",
-                          }}>
-                          {formatCurrency(court.pricePerHourCasual)}
-                        </div>
-                      </div>
+                      ))}
                     </div>
 
-                    {showBookingButton && (
-                      <button
-                        style={{
-                          marginTop: 14,
-                          width: "100%",
-                          padding: "11px",
-                          background: "linear-gradient(135deg,#1a472a,#2d6a4f)",
-                          color: "white",
-                          border: "none",
-                          borderRadius: 10,
-                          fontWeight: 700,
-                          fontSize: 14,
-                          cursor: "pointer",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          gap: 6,
-                        }}>
-                        <EventNoteIcon fontSize="small" /> Đặt ngay
-                      </button>
-                    )}
+                    <button
+                      style={{
+                        marginTop: 14,
+                        width: "100%",
+                        padding: "11px",
+                        background: "linear-gradient(135deg,#1a472a,#2d6a4f)",
+                        color: "white",
+                        border: "none",
+                        borderRadius: 10,
+                        fontWeight: 700,
+                        fontSize: 14,
+                        cursor: "pointer",
+                      }}>
+                      Xem lịch & đặt sân
+                    </button>
                   </div>
                 </div>
               );

@@ -28,13 +28,17 @@ export const TIME_SLOTS: string[] = [
 export type BookingStatus = "pending" | "confirmed" | "cancelled" | "completed";
 
 export type BookingType = "casual" | "fixed";
-
+export interface PriceBreakdownItem {
+  time: string;
+  price: number;
+}
 export interface Booking {
   _id: string;
   user: string;
   userName: string;
   court: string;
   courtName: string;
+  categoryName: string;
   bookingType: BookingType;
   date: string;
   slots: string[];
@@ -43,6 +47,7 @@ export interface Booking {
   hours: number;
   pricePerHour: number;
   totalPrice: number;
+  priceBreakdown: PriceBreakdownItem[];
   status: BookingStatus;
   notes: string;
   cancelledBy?: string | null;

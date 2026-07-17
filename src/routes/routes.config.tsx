@@ -22,7 +22,9 @@ const ManageCourtsPage = lazy(() => import("@/pages/ManageCourtsPage"));
 const ManageUsersPage = lazy(() => import("@/pages/ManageUsersPage"));
 const ProfilePage = lazy(() => import("@/pages/ProfilePage"));
 const RevenuePage = lazy(() => import("@/pages/RevenuePage"));
-
+const ManageCourtCategoriesPage = lazy(
+  () => import("@/pages/ManageCourtCategoriesPage"),
+);
 export type PageKey =
   | "dashboard"
   | "courts"
@@ -32,6 +34,7 @@ export type PageKey =
   | "manage-courts"
   | "manage-users"
   | "revenue"
+  | "manage-court-categories"
   | "profile";
 
 // Nguon su that DUY NHAT cho phan quyen theo trang.
@@ -46,6 +49,7 @@ export const PAGE_ROLES: Record<PageKey, UserRole[]> = {
   "manage-users": ["admin"],
   revenue: ["admin", "manager"],
   profile: ["admin", "manager", "customer"],
+  "manage-court-categories": ["admin"],
 };
 
 export const PAGE_TITLES: Record<PageKey, string> = {
@@ -58,6 +62,7 @@ export const PAGE_TITLES: Record<PageKey, string> = {
   "manage-users": "Quản lý người dùng",
   revenue: "Kế toán / Doanh thu",
   profile: "Hồ sơ cá nhân",
+  "manage-court-categories": "Quản lý loại sân",
 };
 
 export interface NavItem {
@@ -90,6 +95,11 @@ export const NAV_ITEMS: NavItem[] = [
   },
   { icon: PaidIcon, label: "Kế toán / Doanh thu", key: "revenue" },
   { icon: PersonOutlineIcon, label: "Hồ sơ cá nhân", key: "profile" },
+  {
+    icon: AssignmentIcon,
+    label: "Quản lý loại sân",
+    key: "manage-court-categories",
+  },
 ];
 
 export const ROLE_LABELS: Record<UserRole, string> = {
@@ -140,6 +150,7 @@ export const renderPageComponent = (
     "manage-users": <ManageUsersPage />,
     revenue: <RevenuePage />,
     profile: <ProfilePage />,
+    "manage-court-categories": <ManageCourtCategoriesPage />,
   };
 
   return pageMap[page];

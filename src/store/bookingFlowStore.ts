@@ -2,12 +2,7 @@ import { create } from "zustand";
 import { Court } from "@/types/Courts";
 import { Booking, BookingType } from "@/types/Booking";
 
-export type BookingFlowView =
-  | "intro"
-  | "catalog"
-  | "detail"
-  | "payment"
-  | "done";
+export type BookingFlowView = "intro" | "catalog" | "detail" | "payment";
 
 interface BookingFlowStore {
   view: BookingFlowView;
@@ -41,8 +36,9 @@ export const useBookingFlowStore = create<BookingFlowStore>((set) => ({
   notes: "",
   createdBooking: null,
 
-  goToIntro: () => set({ view: "intro" }),
-  goToCatalog: () => set({ view: "catalog" }),
+  goToIntro: () => set({ view: "intro", createdBooking: null }),
+  // FIX: xoa createdBooking moi lan quay lai danh sach, tranh QR cu bi ket dinh lai
+  goToCatalog: () => set({ view: "catalog", createdBooking: null }),
   selectCourt: (court) =>
     set({
       view: "detail",
@@ -50,13 +46,16 @@ export const useBookingFlowStore = create<BookingFlowStore>((set) => ({
       selectedDate: todayStr(),
       selectedSlots: [],
       bookingType: null,
+      createdBooking: null, // FIX: xoa don cu khi bat dau chon san moi
     }),
   setSelectedDate: (date) => set({ selectedDate: date, selectedSlots: [] }),
   setSelectedSlots: (slots) => set({ selectedSlots: slots }),
   setBookingType: (t) => set({ bookingType: t }),
   setNotes: (notes) => set({ notes }),
   goToPayment: () => set({ view: "payment" }),
-  setCreatedBooking: (b) => set({ createdBooking: b, view: "done" }),
+  // FIX: KHONG con "view: 'done'" nua - BookingFlowPage khong co nhanh xu ly view nay,
+  // truoc day khien man QR bi tu dong chuyen ve CourtsCatalogView ngay khi vua tao xong don.
+  setCreatedBooking: (b) => set({ createdBooking: b }),
   reset: () =>
     set({
       view: "intro",

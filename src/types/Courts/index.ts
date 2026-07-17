@@ -1,12 +1,26 @@
 export type CourtType = "fixed" | "casual";
+export interface PriceRule {
+  startTime: string;
+  endTime: string;
+  pricePerHourFixed: number;
+  pricePerHourCasual: number;
+}
+
+export interface CourtCategory {
+  _id: string;
+  name: string;
+  description: string;
+  priceRules: PriceRule[];
+  isActive: boolean;
+  createdAt: string;
+}
 
 export interface Court {
   _id: string;
   name: string;
   description: string;
-  pricePerHourFixed: number;
-  pricePerHourCasual: number;
-  image: string; // key icon MUI, xem src/config/courtIcons.tsx
+  category: CourtCategory;
+  image: string;
   isActive: boolean;
   createdAt: string;
 }
@@ -22,8 +36,7 @@ export interface ListCourtsParams {
 export interface CourtFormPayload {
   name: string;
   description?: string;
-  pricePerHourFixed: number;
-  pricePerHourCasual: number;
+  category: string; // id CourtCategory
   image?: string;
   isActive?: boolean;
 }

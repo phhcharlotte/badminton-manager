@@ -51,7 +51,7 @@ const PaymentView: React.FC<Props> = ({ onDone }) => {
         courtId: selectedCourt._id,
         date: selectedDate,
         slots: selectedSlots,
-        bookingType,
+        bookingType: bookingType!, // da bat buoc chon o CourtDetailView, khong the null khi toi day
         notes,
       });
 

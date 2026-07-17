@@ -1,6 +1,6 @@
 // src/pages/booking-flow/IntroLandingView.tsx
 import React, { useEffect } from "react";
-import { Button, CircularProgress } from "@mui/material";
+import { Button, CircularProgress, Chip } from "@mui/material";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
 import PhoneIcon from "@mui/icons-material/Phone";
 import EmailIcon from "@mui/icons-material/Email";
@@ -9,21 +9,18 @@ import StarIcon from "@mui/icons-material/Star";
 import BoltIcon from "@mui/icons-material/Bolt";
 import SportsTennisIcon from "@mui/icons-material/SportsTennis";
 import EventAvailableIcon from "@mui/icons-material/EventAvailable";
-import { useCourtStore } from "@/store/courtStore";
 import { useBookingFlowStore } from "@/store/bookingFlowStore";
 import { BUSINESS_INFO } from "@/config/businessInfo";
-import { getCourtIcon } from "@/config/courtIcons";
 import { formatCurrency } from "@/utils/helpers";
+import { useCourtCategoryStore } from "@/store/courtCategoryStore";
 
 const IntroLandingView: React.FC = () => {
-  const { courts, isLoading, fetchCourts } = useCourtStore();
+  const { categories, isLoading, fetchCategories } = useCourtCategoryStore();
   const goToCatalog = useBookingFlowStore((s) => s.goToCatalog);
 
   useEffect(() => {
-    fetchCourts();
-  }, []); // eslint-disable-line
-
-  const activeCourts = courts.filter((c) => c.isActive);
+    fetchCategories();
+  }, []);
 
   return (
     <div className="fade-in-up">
@@ -135,25 +132,12 @@ const IntroLandingView: React.FC = () => {
                 <thead>
                   <tr>
                     <th>Sân</th>
-                    <th>
-                      <StarIcon
-                        fontSize="small"
-                        sx={{ verticalAlign: "middle", mr: 0.5 }}
-                      />
-                      Giá cố định / giờ
-                    </th>
-                    <th>
-                      <BoltIcon
-                        fontSize="small"
-                        sx={{ verticalAlign: "middle", mr: 0.5 }}
-                      />
-                      Giá vãng lai / giờ
-                    </th>
+                    <th>Loại sân</th>
+                    <th>Bảng giá theo giờ</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {activeCourts.map((court) => {
-                    const CourtIcon = getCourtIcon(court.image);
+                  {categories.map((court) => {
                     return (
                       <tr key={court._id}>
                         <td>
@@ -163,9 +147,6 @@ const IntroLandingView: React.FC = () => {
                               alignItems: "center",
                               gap: 10,
                             }}>
-                            <CourtIcon
-                              sx={{ color: "#1a472a", fontSize: 24 }}
-                            />
                             <div>
                               <div style={{ fontWeight: 700 }}>
                                 {court.name}
@@ -176,26 +157,68 @@ const IntroLandingView: React.FC = () => {
                             </div>
                           </div>
                         </td>
-                        <td
-                          style={{
-                            fontWeight: 800,
-                            color: "#b45309",
-                            fontSize: 15,
-                          }}>
-                          {formatCurrency(court.pricePerHourFixed)}
+                        <td>
+                          <Chip
+                            label={court?.name}
+                            size="small"
+                            color="success"
+                            variant="outlined"
+                          />
                         </td>
-                        <td
-                          style={{
-                            fontWeight: 800,
-                            color: "#1e40af",
-                            fontSize: 15,
-                          }}>
-                          {formatCurrency(court.pricePerHourCasual)}
+                        <td>
+                          <div
+                            style={{
+                              display: "flex",
+                              flexDirection: "column",
+                              gap: 6,
+                            }}>
+                            {court?.priceRules.map((r, i) => (
+                              <div
+                                key={i}
+                                style={{
+                                  fontSize: 12,
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: 8,
+                                }}>
+                                <span
+                                  style={{ color: "#94a3b8", minWidth: 90 }}>
+                                  <AccessTimeIcon
+                                    sx={{
+                                      fontSize: 12,
+                                      verticalAlign: "middle",
+                                    }}
+                                  />{" "}
+                                  {r.startTime}–{r.endTime}
+                                </span>
+                                <span
+                                  style={{ color: "#b45309", fontWeight: 700 }}>
+                                  <StarIcon
+                                    sx={{
+                                      fontSize: 12,
+                                      verticalAlign: "middle",
+                                    }}
+                                  />{" "}
+                                  {formatCurrency(r.pricePerHourFixed)}
+                                </span>
+                                <span
+                                  style={{ color: "#1e40af", fontWeight: 700 }}>
+                                  <BoltIcon
+                                    sx={{
+                                      fontSize: 12,
+                                      verticalAlign: "middle",
+                                    }}
+                                  />{" "}
+                                  {formatCurrency(r.pricePerHourCasual)}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
                         </td>
                       </tr>
                     );
                   })}
-                  {activeCourts.length === 0 && (
+                  {categories.length === 0 && (
                     <tr>
                       <td
                         colSpan={3}

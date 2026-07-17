@@ -7,14 +7,13 @@ import {
   DialogContent,
   DialogActions,
   TextField,
+  MenuItem,
   Switch,
   FormControlLabel,
   Alert,
   IconButton,
   CircularProgress,
-  ToggleButtonGroup,
-  ToggleButton,
-  InputAdornment,
+  Chip,
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -22,34 +21,26 @@ import AddIcon from "@mui/icons-material/Add";
 import StadiumIcon from "@mui/icons-material/Stadium";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import PauseCircleIcon from "@mui/icons-material/PauseCircle";
-import StarIcon from "@mui/icons-material/Star";
-import BoltIcon from "@mui/icons-material/Bolt";
+import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import { useCourtStore } from "@/store/courtStore";
+import { useCourtCategoryStore } from "@/store/courtCategoryStore";
 import { Court } from "@/types/Courts";
 import { formatCurrency } from "@/utils/helpers";
+import { getCourtIcon } from "@/config/courtIcons";
 import NotificationSnackbar from "@/components/shared/NotificationSnackbar";
 import { useNotification } from "@/hooks/useNotification";
-import {
-  COURT_ICON_OPTIONS,
-  DEFAULT_COURT_ICON_KEY,
-  getCourtIcon,
-} from "@/config/courtIcons";
 
 interface CourtForm {
   name: string;
   description: string;
-  pricePerHourFixed: number;
-  pricePerHourCasual: number;
-  image: string;
+  category: string; // id cua CourtCategory
   isActive: boolean;
 }
 const DEFAULT_FORM: CourtForm = {
   name: "",
   description: "",
-  pricePerHourFixed: 100000,
-  pricePerHourCasual: 120000,
-  image: DEFAULT_COURT_ICON_KEY,
+  category: "",
   isActive: true,
 };
 
@@ -63,30 +54,37 @@ const ManageCourtsPage: React.FC = () => {
     editCourt,
     removeCourt,
   } = useCourtStore();
+  const { categories, fetchCategories } = useCourtCategoryStore();
   const { notification, notify, close: closeNotif } = useNotification();
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingCourt, setEditingCourt] = useState<Court | null>(null);
   const [form, setForm] = useState<CourtForm>(DEFAULT_FORM);
   const [saving, setSaving] = useState(false);
-
-  const [priceDialog, setPriceDialog] = useState(false);
-  const [priceEditId, setPriceEditId] = useState("");
-  const [newFixedPrice, setNewFixedPrice] = useState(0);
-  const [newCasualPrice, setNewCasualPrice] = useState(0);
-  const [priceSaving, setPriceSaving] = useState(false);
+  const [formError, setFormError] = useState("");
 
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
-  const [formError, setFormError] = useState("");
 
   useEffect(() => {
     fetchCourts().catch(() => notify("Không tải được danh sách sân!", "error"));
+    fetchCategories().catch(() =>
+      notify("Không tải được danh sách loại sân!", "error"),
+    );
   }, []); // eslint-disable-line
 
+  const activeCategories = categories.filter((c) => c.isActive);
+
   const openAdd = () => {
+    if (activeCategories.length === 0) {
+      notify(
+        'Chưa có loại sân nào đang hoạt động. Vào "Quản lý loại sân" để tạo trước!',
+        "warning",
+      );
+      return;
+    }
     setEditingCourt(null);
-    setForm(DEFAULT_FORM);
+    setForm({ ...DEFAULT_FORM, category: activeCategories[0]._id });
     setFormError("");
     setDialogOpen(true);
   };
@@ -96,9 +94,7 @@ const ManageCourtsPage: React.FC = () => {
     setForm({
       name: c.name,
       description: c.description,
-      pricePerHourFixed: c.pricePerHourFixed,
-      pricePerHourCasual: c.pricePerHourCasual,
-      image: c.image,
+      category: c.category._id,
       isActive: c.isActive,
     });
     setFormError("");
@@ -106,19 +102,16 @@ const ManageCourtsPage: React.FC = () => {
   };
 
   const handleSave = async () => {
-    if (
-      !form.name ||
-      form.pricePerHourFixed <= 0 ||
-      form.pricePerHourCasual <= 0
-    ) {
-      setFormError("Vui lòng điền đầy đủ tên sân và 2 mức giá lớn hơn 0!");
+    if (!form.name || !form.category) {
+      setFormError("Vui lòng nhập tên sân và chọn loại sân!");
       return;
     }
     setSaving(true);
     setFormError("");
+    const payload = { ...form, image: "sports_tennis" }; // icon mac dinh, khong can admin chon
     const result = editingCourt
-      ? await editCourt(editingCourt._id, form)
-      : await addCourt(form);
+      ? await editCourt(editingCourt._id, payload)
+      : await addCourt(payload);
     setSaving(false);
     if (result.success) {
       notify(result.message, "success");
@@ -142,28 +135,6 @@ const ManageCourtsPage: React.FC = () => {
     if (!result.success) notify(result.message, "error");
   };
 
-  const openPrice = (c: Court) => {
-    setPriceEditId(c._id);
-    setNewFixedPrice(c.pricePerHourFixed);
-    setNewCasualPrice(c.pricePerHourCasual);
-    setPriceDialog(true);
-  };
-
-  const handleUpdatePrice = async () => {
-    if (newFixedPrice <= 0 || newCasualPrice <= 0) return;
-    setPriceSaving(true);
-    const result = await editCourt(priceEditId, {
-      pricePerHourFixed: newFixedPrice,
-      pricePerHourCasual: newCasualPrice,
-    });
-    setPriceSaving(false);
-    setPriceDialog(false);
-    notify(
-      result.success ? "Cập nhật giá sân thành công!" : result.message,
-      result.success ? "success" : "error",
-    );
-  };
-
   return (
     <div className="fade-in-up">
       <div
@@ -179,7 +150,7 @@ const ManageCourtsPage: React.FC = () => {
             Quản lý sân
           </div>
           <div className="page-subtitle">
-            Thêm, sửa, xoá và điều chỉnh giá sân
+            Thêm, sửa, xoá sân — giá tiền được lấy từ loại sân đã thiết lập
           </div>
         </div>
         <Button
@@ -258,22 +229,9 @@ const ManageCourtsPage: React.FC = () => {
                   <tr>
                     <th>Sân</th>
                     <th>Mô tả</th>
-                    <th>
-                      <StarIcon
-                        fontSize="small"
-                        sx={{ verticalAlign: "middle", mr: 0.5 }}
-                      />
-                      Giá cố định
-                    </th>
-                    <th>
-                      <BoltIcon
-                        fontSize="small"
-                        sx={{ verticalAlign: "middle", mr: 0.5 }}
-                      />
-                      Giá vãng lai
-                    </th>
+                    <th>Loại sân</th>
+                    <th>Bảng giá</th>
                     <th>Trạng thái</th>
-                    <th>Tạo lúc</th>
                     <th>Thao tác</th>
                   </tr>
                 </thead>
@@ -290,7 +248,7 @@ const ManageCourtsPage: React.FC = () => {
                               gap: 10,
                             }}>
                             <CourtIcon
-                              sx={{ fontSize: 28, color: "#1a472a" }}
+                              sx={{ fontSize: 26, color: "#1a472a" }}
                             />
                             <span style={{ fontWeight: 700, fontSize: 15 }}>
                               {court.name}
@@ -299,17 +257,39 @@ const ManageCourtsPage: React.FC = () => {
                         </td>
                         <td
                           style={{
-                            maxWidth: 200,
+                            maxWidth: 180,
                             fontSize: 13,
                             color: "#718096",
                           }}>
                           {court.description}
                         </td>
-                        <td style={{ fontWeight: 700, color: "#b45309" }}>
-                          {formatCurrency(court.pricePerHourFixed ?? 0)}
+                        <td>
+                          <Chip
+                            label={court.category?.name || "—"}
+                            size="small"
+                            color="success"
+                            variant="outlined"
+                          />
                         </td>
-                        <td style={{ fontWeight: 700, color: "#1e40af" }}>
-                          {formatCurrency(court.pricePerHourCasual ?? 0)}
+                        <td>
+                          <div
+                            style={{
+                              display: "flex",
+                              flexDirection: "column",
+                              gap: 2,
+                            }}>
+                            {court.category?.priceRules.map((r, i) => (
+                              <span
+                                key={i}
+                                style={{ fontSize: 11, color: "#718096" }}>
+                                <AccessTimeIcon
+                                  sx={{ fontSize: 12, verticalAlign: "middle" }}
+                                />{" "}
+                                {r.startTime}–{r.endTime}:{" "}
+                                {formatCurrency(r.pricePerHour)}
+                              </span>
+                            ))}
+                          </div>
                         </td>
                         <td>
                           <FormControlLabel
@@ -322,43 +302,14 @@ const ManageCourtsPage: React.FC = () => {
                               />
                             }
                             label={
-                              <span
-                                style={{
-                                  fontSize: 13,
-                                  display: "inline-flex",
-                                  alignItems: "center",
-                                  gap: 4,
-                                }}>
-                                {court.isActive ? (
-                                  <CheckCircleIcon
-                                    fontSize="small"
-                                    color="success"
-                                  />
-                                ) : (
-                                  <PauseCircleIcon
-                                    fontSize="small"
-                                    color="disabled"
-                                  />
-                                )}
+                              <span style={{ fontSize: 13 }}>
                                 {court.isActive ? "Hoạt động" : "Tạm ngưng"}
                               </span>
                             }
                           />
                         </td>
-                        <td style={{ fontSize: 12, color: "#718096" }}>
-                          {new Date(court.createdAt).toLocaleDateString(
-                            "vi-VN",
-                          )}
-                        </td>
                         <td>
                           <div style={{ display: "flex", gap: 4 }}>
-                            <IconButton
-                              size="small"
-                              onClick={() => openPrice(court)}
-                              color="warning"
-                              title="Sửa giá">
-                              <StarIcon fontSize="small" />
-                            </IconButton>
                             <IconButton
                               size="small"
                               onClick={() => openEdit(court)}
@@ -379,13 +330,13 @@ const ManageCourtsPage: React.FC = () => {
                   {courts.length === 0 && (
                     <tr>
                       <td
-                        colSpan={7}
+                        colSpan={6}
                         style={{
                           textAlign: "center",
                           padding: 24,
                           color: "#718096",
                         }}>
-                        Chưa có sân nào, bấm "Thêm sân mới" để bắt đầu
+                        Chưa có sân nào
                       </td>
                     </tr>
                   )}
@@ -396,7 +347,7 @@ const ManageCourtsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Dialog Them/Sua san */}
+      {/* Them/Sua san - CHI 3 truong */}
       <Dialog
         open={dialogOpen}
         onClose={() => !saving && setDialogOpen(false)}
@@ -434,85 +385,41 @@ const ManageCourtsPage: React.FC = () => {
               multiline
               rows={2}
             />
+            <TextField
+              select
+              label="Loại sân *"
+              value={form.category}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, category: e.target.value }))
+              }
+              size="small"
+              fullWidth
+              helperText={
+                activeCategories.length === 0
+                  ? 'Chưa có loại sân nào — vào "Quản lý loại sân" để tạo trước'
+                  : ""
+              }>
+              {activeCategories.map((cat) => (
+                <MenuItem key={cat._id} value={cat._id}>
+                  {cat.name}
+                </MenuItem>
+              ))}
+            </TextField>
 
-            <div>
-              <div
-                style={{
-                  fontSize: 12,
-                  fontWeight: 700,
-                  color: "#4a5568",
-                  marginBottom: 8,
-                }}>
-                Chọn icon hiển thị cho sân:
-              </div>
-              <ToggleButtonGroup
-                value={form.image}
-                exclusive
-                onChange={(_e, val) =>
-                  val && setForm((f) => ({ ...f, image: val }))
-                }
-                sx={{ flexWrap: "wrap", gap: 1 }}>
-                {COURT_ICON_OPTIONS.map(({ key, label, Icon }) => (
-                  <ToggleButton
-                    key={key}
-                    value={key}
-                    title={label}
-                    sx={{ borderRadius: 2, px: 1.5 }}>
-                    <Icon />
-                  </ToggleButton>
-                ))}
-              </ToggleButtonGroup>
-            </div>
-
-            <Alert severity="info" sx={{ py: 0.5 }}>
-              Mỗi sân có <strong>2 mức giá</strong> — khách sẽ chọn loại giá lúc
-              đặt sân, không cần tạo 2 sân riêng.
-            </Alert>
-
-            <div style={{ display: "flex", gap: 12 }}>
-              <TextField
-                label="Giá cố định (đ/giờ) *"
-                type="number"
-                value={form.pricePerHourFixed}
-                onChange={(e) =>
-                  setForm((f) => ({
-                    ...f,
-                    pricePerHourFixed: Number(e.target.value),
-                  }))
-                }
-                size="small"
-                fullWidth
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <StarIcon fontSize="small" color="warning" />
-                    </InputAdornment>
-                  ),
-                }}
-                slotProps={{ htmlInput: { min: 0, step: 10000 } }}
-              />
-              <TextField
-                label="Giá vãng lai (đ/giờ) *"
-                type="number"
-                value={form.pricePerHourCasual}
-                onChange={(e) =>
-                  setForm((f) => ({
-                    ...f,
-                    pricePerHourCasual: Number(e.target.value),
-                  }))
-                }
-                size="small"
-                fullWidth
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <BoltIcon fontSize="small" color="info" />
-                    </InputAdornment>
-                  ),
-                }}
-                slotProps={{ htmlInput: { min: 0, step: 10000 } }}
-              />
-            </div>
+            {form.category && (
+              <Alert severity="info" sx={{ py: 0.5 }}>
+                Giá theo giờ của loại sân này:{" "}
+                {categories
+                  .find((c) => c._id === form.category)
+                  ?.priceRules.map((r, i) => (
+                    <span key={i}>
+                      {i > 0 && ", "}
+                      {r.startTime}–{r.endTime}:{" "}
+                      {formatCurrency(r.pricePerHour)}
+                    </span>
+                  ))}
+              </Alert>
+            )}
 
             <FormControlLabel
               control={
@@ -554,85 +461,6 @@ const ManageCourtsPage: React.FC = () => {
         </DialogActions>
       </Dialog>
 
-      {/* Dialog sua nhanh gia */}
-      <Dialog
-        open={priceDialog}
-        onClose={() => !priceSaving && setPriceDialog(false)}
-        maxWidth="xs"
-        fullWidth>
-        <DialogTitle
-          sx={{
-            fontWeight: 800,
-            display: "flex",
-            alignItems: "center",
-            gap: 1,
-          }}>
-          <StarIcon /> Điều chỉnh giá sân
-        </DialogTitle>
-        <DialogContent>
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: 14,
-              marginTop: 8,
-            }}>
-            <TextField
-              fullWidth
-              label="Giá cố định (đ/giờ)"
-              type="number"
-              value={newFixedPrice}
-              onChange={(e) => setNewFixedPrice(Number(e.target.value))}
-              size="small"
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <StarIcon fontSize="small" color="warning" />
-                  </InputAdornment>
-                ),
-              }}
-              slotProps={{ htmlInput: { min: 0, step: 10000 } }}
-            />
-            <TextField
-              fullWidth
-              label="Giá vãng lai (đ/giờ)"
-              type="number"
-              value={newCasualPrice}
-              onChange={(e) => setNewCasualPrice(Number(e.target.value))}
-              size="small"
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <BoltIcon fontSize="small" color="info" />
-                  </InputAdornment>
-                ),
-              }}
-              slotProps={{ htmlInput: { min: 0, step: 10000 } }}
-            />
-          </div>
-        </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 3 }}>
-          <Button
-            onClick={() => setPriceDialog(false)}
-            color="inherit"
-            disabled={priceSaving}>
-            Huỷ
-          </Button>
-          <Button
-            variant="contained"
-            onClick={handleUpdatePrice}
-            disabled={priceSaving}
-            sx={{ background: "#1a472a", fontWeight: 700 }}>
-            {priceSaving ? (
-              <CircularProgress size={18} color="inherit" />
-            ) : (
-              "Cập nhật giá"
-            )}
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Dialog xoa */}
       <Dialog
         open={!!deleteId}
         onClose={() => setDeleteId(null)}

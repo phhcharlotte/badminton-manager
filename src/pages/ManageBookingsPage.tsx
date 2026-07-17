@@ -289,18 +289,27 @@ const ManageBookingsPage: React.FC = () => {
                         <td>
                           <div style={{ fontWeight: 700 }}>{b.courtName}</div>
                           <Chip
+                            label={b.categoryName}
+                            size="small"
+                            color="success"
+                            variant="outlined"
+                            sx={{ mr: 0.5, mt: 0.5 }}
+                          />
+                          <Chip
                             icon={
-                              b.courtType === "fixed" ? (
+                              b.bookingType === "fixed" ? (
                                 <StarIcon fontSize="small" />
                               ) : (
                                 <BoltIcon fontSize="small" />
                               )
                             }
                             label={
-                              b.courtType === "fixed" ? "Cố định" : "Vãng lai"
+                              b.bookingType === "fixed" ? "Cố định" : "Vãng lai"
                             }
                             size="small"
-                            color={b.courtType === "fixed" ? "warning" : "info"}
+                            color={
+                              b.bookingType === "fixed" ? "warning" : "info"
+                            }
                             variant="outlined"
                             sx={{ mt: 0.5 }}
                           />

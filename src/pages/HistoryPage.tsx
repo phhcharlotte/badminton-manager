@@ -231,21 +231,38 @@ const HistoryPage: React.FC = () => {
                           </div>
                         </td>
                         <td>
-                          <Chip
-                            icon={
-                              b.courtType === "fixed" ? (
-                                <StarIcon fontSize="small" />
-                              ) : (
-                                <BoltIcon fontSize="small" />
-                              )
-                            }
-                            label={
-                              b.courtType === "fixed" ? "Cố định" : "Vãng lai"
-                            }
-                            size="small"
-                            color={b.courtType === "fixed" ? "warning" : "info"}
-                            variant="outlined"
-                          />
+                          <div
+                            style={{
+                              display: "flex",
+                              flexDirection: "column",
+                              gap: 4,
+                            }}>
+                            <Chip
+                              label={b.categoryName}
+                              size="small"
+                              color="success"
+                              variant="outlined"
+                            />
+                            <Chip
+                              icon={
+                                b.bookingType === "fixed" ? (
+                                  <StarIcon fontSize="small" />
+                                ) : (
+                                  <BoltIcon fontSize="small" />
+                                )
+                              }
+                              label={
+                                b.bookingType === "fixed"
+                                  ? "Cố định"
+                                  : "Vãng lai"
+                              }
+                              size="small"
+                              color={
+                                b.bookingType === "fixed" ? "warning" : "info"
+                              }
+                              variant="outlined"
+                            />
+                          </div>
                         </td>
                         <td>
                           <span

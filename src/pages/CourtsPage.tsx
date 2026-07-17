@@ -10,15 +10,14 @@ import {
 import SearchIcon from "@mui/icons-material/Search";
 import SearchOffIcon from "@mui/icons-material/SearchOff";
 import StadiumIcon from "@mui/icons-material/Stadium";
+import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import StarIcon from "@mui/icons-material/Star";
 import BoltIcon from "@mui/icons-material/Bolt";
-import AccessTimeIcon from "@mui/icons-material/AccessTime";
-
+import EventNoteIcon from "@mui/icons-material/EventNote";
 import { useCourtStore } from "@/store/courtStore";
-import { Court } from "@/types/Courts/index";
+import { Court } from "@/types/Courts";
 import { formatCurrency } from "@/utils/helpers";
 import { getCourtIcon } from "@/config/courtIcons";
-import { useBookingFlowStore } from "@/store/bookingFlowStore";
 
 interface Props {
   onSelectCourt?: (court: Court) => void;
@@ -30,8 +29,6 @@ const CourtsPage: React.FC<Props> = ({
   showBookingButton = false,
 }) => {
   const { courts, isLoading, error, fetchCourts } = useCourtStore();
-  const selectCourt = useBookingFlowStore((s) => s.selectCourt);
-
   const [search, setSearch] = useState("");
 
   useEffect(() => {
@@ -151,8 +148,8 @@ const CourtsPage: React.FC<Props> = ({
                 <div
                   key={court._id}
                   className="court-card"
-                  onClick={() => selectCourt(court)}
-                  style={{ cursor: "pointer" }}>
+                  onClick={() => onSelectCourt && onSelectCourt(court)}
+                  style={{ cursor: onSelectCourt ? "pointer" : "default" }}>
                   <div
                     className="court-card-image"
                     style={{
@@ -167,12 +164,13 @@ const CourtsPage: React.FC<Props> = ({
                     <div className="court-desc">{court.description}</div>
 
                     <Chip
-                      label={court.category?.name}
+                      label={court.category?.name || "Chưa gán loại sân"}
                       size="small"
                       color="success"
                       variant="outlined"
                       sx={{ mt: 1 }}
                     />
+
                     <div
                       style={{
                         marginTop: 10,
@@ -204,21 +202,27 @@ const CourtsPage: React.FC<Props> = ({
                       ))}
                     </div>
 
-                    <button
-                      style={{
-                        marginTop: 14,
-                        width: "100%",
-                        padding: "11px",
-                        background: "linear-gradient(135deg,#1a472a,#2d6a4f)",
-                        color: "white",
-                        border: "none",
-                        borderRadius: 10,
-                        fontWeight: 700,
-                        fontSize: 14,
-                        cursor: "pointer",
-                      }}>
-                      Xem lịch & đặt sân
-                    </button>
+                    {showBookingButton && (
+                      <button
+                        style={{
+                          marginTop: 14,
+                          width: "100%",
+                          padding: "11px",
+                          background: "linear-gradient(135deg,#1a472a,#2d6a4f)",
+                          color: "white",
+                          border: "none",
+                          borderRadius: 10,
+                          fontWeight: 700,
+                          fontSize: 14,
+                          cursor: "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: 6,
+                        }}>
+                        <EventNoteIcon fontSize="small" /> Đặt ngay
+                      </button>
+                    )}
                   </div>
                 </div>
               );

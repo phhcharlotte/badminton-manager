@@ -174,13 +174,6 @@ const CourtDetailView: React.FC = () => {
     }
     return sum;
   }, [bookingType, selectedSlots, priceRules]);
-  console.log({
-    slotsLength: selectedSlots.length,
-    isContiguous,
-    bookingType,
-    previewTotal,
-    priceRulesCount: priceRules.length,
-  });
 
   const canContinue =
     selectedSlots.length > 0 &&
@@ -320,7 +313,41 @@ const CourtDetailView: React.FC = () => {
             </div>
 
             {/* Chon loai gia */}
-            <div style={{ margin: "0 16px 16px" }}>
+            <div
+              style={{
+                margin: "0 16px 16px",
+                padding: selectedSlots.length > 0 && !bookingType ? 10 : 0,
+                borderRadius: 10,
+                border:
+                  selectedSlots.length > 0 && !bookingType
+                    ? "2px solid #ef4444"
+                    : "none",
+                background:
+                  selectedSlots.length > 0 && !bookingType
+                    ? "#fef2f2"
+                    : "transparent",
+                transition: "all 0.3s",
+              }}>
+              {selectedSlots.length > 0 && !bookingType && (
+                <div
+                  style={{
+                    fontSize: 11,
+                    color: "#dc2626",
+                    fontWeight: 700,
+                    marginBottom: 6,
+                  }}>
+                  ⚠ Bạn cần chọn 1 trong 2 mục dưới đây để tiếp tục
+                </div>
+              )}
+              <div
+                style={{
+                  fontSize: 12,
+                  fontWeight: 700,
+                  color: "#4a5568",
+                  marginBottom: 8,
+                }}>
+                Chọn loại giá:
+              </div>
               <div
                 style={{
                   fontSize: 12,

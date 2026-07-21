@@ -30,8 +30,6 @@ const toMinutes = (t: string): number => {
   return h * 60 + m;
 };
 
-// Tra gia cho 1 khung gio theo bang gia cua loai san + loai dat da chon (chi de PREVIEW,
-// gia chinh thuc luon do BE tinh lai va xac nhan luc tao don)
 const getPreviewPrice = (
   slot: string,
   rules: PriceRule[],
@@ -125,7 +123,7 @@ const CourtDetailView: React.FC = () => {
       });
       socket.off("slots:updated", handleSlotsUpdated);
     };
-  }, [selectedCourt, selectedDate]); // eslint-disable-line
+  }, [selectedCourt, selectedDate]);
 
   if (!selectedCourt) {
     goToCatalog();
@@ -176,6 +174,13 @@ const CourtDetailView: React.FC = () => {
     }
     return sum;
   }, [bookingType, selectedSlots, priceRules]);
+  console.log({
+    slotsLength: selectedSlots.length,
+    isContiguous,
+    bookingType,
+    previewTotal,
+    priceRulesCount: priceRules.length,
+  });
 
   const canContinue =
     selectedSlots.length > 0 &&
